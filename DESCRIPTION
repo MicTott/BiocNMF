@@ -27,7 +27,8 @@ Imports:
     RcppML,
     parallel,
     Matrix,
-    ggplot2
+    ggplot2,
+    scran
 Suggests:
     testthat (>= 3.0.0),
     knitr,
@@ -35,8 +36,8 @@ Suggests:
     BiocStyle,
     scuttle,
     scater,
-    scran,
     uwot,
+    ggrepel,
     SpatialExperiment,
     scRNAseq,
     pheatmap,
