@@ -10,6 +10,7 @@ importFrom(stats, rnorm, cor, reorder, kmeans, dist, hclust, cophenetic, as.dist
 importFrom(utils, packageDescription)
 importFrom(parallel, mclapply)
 importFrom(Matrix, Matrix)
+importFrom(ggplot2, ggplot, aes, geom_point, scale_color_viridis_c, scale_color_gradientn, ggtitle, theme_minimal, labs, xlab, ylab)
 
 export(runBiocNMF)
 export(getBasis)
@@ -28,3 +29,5 @@ export(plotStability)
 export(plotGEPs)
 export(plotGEPUsage)
 export(plotStabilityComparison)
+export(vizDimRed)
+export(vizUMAP)

@@ -26,7 +26,8 @@ Imports:
     SummarizedExperiment,
     RcppML,
     parallel,
-    Matrix
+    Matrix,
+    ggplot2
 Suggests:
     testthat (>= 3.0.0),
     knitr,
@@ -37,7 +38,6 @@ Suggests:
     scran,
     uwot,
     SpatialExperiment,
-    ggplot2,
     scRNAseq,
     pheatmap,
     patchwork
