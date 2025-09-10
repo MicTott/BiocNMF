@@ -143,16 +143,40 @@ plotDEPsVolcano <- function(deps_results, cell_types = NULL,
         cell_types <- names(deps_results)
     }
     
-    # Combine all results into one data frame
+    # Combine all results into one data frame - handle DataFrame structure properly
     plot_data <- do.call(rbind, lapply(cell_types, function(ct) {
-        df <- deps_results[[ct]]
-        df$cell_type <- ct
-        df$program <- rownames(df)
+        deps_df <- deps_results[[ct]]
+        
+        # Create clean data frame with only needed columns
+        df <- data.frame(
+            cell_type = ct,
+            program = rownames(deps_df),
+            fold_enrichment = deps_df$fold_enrichment,
+            p.value = deps_df$p.value,
+            FDR = deps_df$FDR,
+            stringsAsFactors = FALSE
+        )
+        
         df$neg_log10_pval <- -log10(df$p.value)
         df$log2_fold <- log2(df$fold_enrichment)
         
-        # Handle infinite values
-        df$log2_fold[is.infinite(df$log2_fold)] <- max(df$log2_fold[is.finite(df$log2_fold)], na.rm = TRUE) + 1
+        # Handle infinite values properly
+        if (any(is.infinite(df$log2_fold))) {
+            max_finite <- max(df$log2_fold[is.finite(df$log2_fold)], na.rm = TRUE)
+            min_finite <- min(df$log2_fold[is.finite(df$log2_fold)], na.rm = TRUE)
+            
+            if (is.finite(max_finite)) {
+                df$log2_fold[is.infinite(df$log2_fold) & df$log2_fold > 0] <- max_finite + 0.5
+            } else {
+                df$log2_fold[is.infinite(df$log2_fold) & df$log2_fold > 0] <- 5
+            }
+            
+            if (is.finite(min_finite)) {
+                df$log2_fold[is.infinite(df$log2_fold) & df$log2_fold < 0] <- min_finite - 0.5
+            } else {
+                df$log2_fold[is.infinite(df$log2_fold) & df$log2_fold < 0] <- -5
+            }
+        }
         
         return(df)
     }))
@@ -177,20 +201,24 @@ plotDEPsVolcano <- function(deps_results, cell_types = NULL,
     # Create volcano plot
     p <- ggplot(plot_data, aes(x = log2_fold, y = neg_log10_pval)) +
         geom_point(aes(color = significance), alpha = 0.7, size = 2) +
-        geom_hline(yintercept = -log10(pval_threshold), linetype = "dashed", color = "gray50") +
-        geom_vline(xintercept = log2(fold_threshold), linetype = "dashed", color = "gray50") +
-        geom_vline(xintercept = log2(1/fold_threshold), linetype = "dashed", color = "gray50") +
+        geom_hline(yintercept = -log10(pval_threshold), linetype = "dashed", color = "gray50", alpha = 0.8) +
+        geom_vline(xintercept = log2(fold_threshold), linetype = "dashed", color = "gray50", alpha = 0.8) +
+        geom_vline(xintercept = log2(1/fold_threshold), linetype = "dashed", color = "gray50", alpha = 0.8) +
         scale_color_manual(values = c("Not Significant" = "gray70", 
                                      "Enriched" = "red3", 
                                      "Depleted" = "blue3")) +
-        facet_wrap(~cell_type, ncol = ncol) +
+        facet_wrap(~cell_type, ncol = ncol, scales = "free") +
         theme_minimal() +
         labs(x = "Log2 Fold Enrichment", 
              y = "-Log10 P-value",
              title = "Differentially Expressed Programs Across Cell Types",
+             subtitle = "Each panel shows 1-vs-all comparison for each cell type",
              color = "Significance") +
-        theme(plot.title = element_text(size = 14, hjust = 0.5),
-              strip.text = element_text(size = 12, face = "bold"))
+        theme(plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
+              plot.subtitle = element_text(size = 11, hjust = 0.5),
+              strip.text = element_text(size = 11, face = "bold"),
+              axis.text = element_text(size = 9),
+              legend.position = "bottom")
     
     # Add labels for top programs if ggrepel is available
     if (requireNamespace("ggrepel", quietly = TRUE)) {
@@ -226,9 +254,19 @@ plotDEPsDots <- function(deps_results, fold_threshold = 1.2,
     
     # Combine all results and filter for significant enrichments
     plot_data <- do.call(rbind, lapply(names(deps_results), function(ct) {
-        df <- deps_results[[ct]]
-        df$cell_type <- ct
-        df$program <- rownames(df)
+        deps_df <- deps_results[[ct]]
+        
+        # Create clean data frame
+        df <- data.frame(
+            cell_type = ct,
+            program = rownames(deps_df),
+            fold_enrichment = deps_df$fold_enrichment,
+            p.value = deps_df$p.value,
+            FDR = deps_df$FDR,
+            stringsAsFactors = FALSE
+        )
+        
+        # Filter for significant enrichments
         return(df[df$fold_enrichment >= fold_threshold & df$p.value <= pval_threshold, ])
     }))
     
