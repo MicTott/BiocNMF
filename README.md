@@ -41,7 +41,7 @@ BiocNMF provides high-performance non-negative matrix factorization (NMF) method
 # Install from GitHub
 if (!requireNamespace("devtools", quietly = TRUE))
     install.packages("devtools")
-devtools::install_github("yourusername/BiocNMF")
+devtools::install_github("MicTott/BiocNMF")
 
 # Load package
 library(BiocNMF)
@@ -109,4 +109,4 @@ This package is licensed under the Artistic-2.0 license.
 
 ## Issues
 
-Please report issues on [GitHub Issues](https://github.com/yourusername/BiocNMF/issues).
+Please report issues on [GitHub Issues](https://github.com/MicTott/BiocNMF/issues).

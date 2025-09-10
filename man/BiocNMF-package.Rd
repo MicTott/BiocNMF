@@ -11,13 +11,13 @@ This package provides high-performance non-negative matrix factorization (NMF) m
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/yourusername/BiocNMF}
-  \item Report bugs at \url{https://github.com/yourusername/BiocNMF/issues}
+  \item \url{https://github.com/MicTott/BiocNMF}
+  \item Report bugs at \url{https://github.com/MicTott/BiocNMF/issues}
 }
 
 }
 \author{
-\strong{Maintainer}: Your Name \email{your.email@example.com} (\href{https://orcid.org/0000-0000-0000-0000}{ORCID})
+\strong{Maintainer}: Michael Totty \email{mictott@gmail.com}
 
 }
 \keyword{internal}

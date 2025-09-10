@@ -4,8 +4,7 @@ Title: Fast Non-negative Matrix Factorization for Single Cell and Spatial Data
 Version: 0.99.0
 Date: 2025-09-09
 Authors@R: c(
-    person("Your", "Name", email = "your.email@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0000-0000-0000"))
+    person("Michael", "Totty", email = "mictott@gmail.com", role = c("aut", "cre"))
     )
 Description: This package provides high-performance non-negative matrix 
     factorization (NMF) methods for SingleCellExperiment and SpatialExperiment 
@@ -41,7 +40,7 @@ Suggests:
 VignetteBuilder: knitr
 biocViews: DimensionReduction, FeatureExtraction, Clustering, 
     RNASeq, SingleCell, Transcriptomics, Spatial, Software
-BugReports: https://github.com/yourusername/BiocNMF/issues
-URL: https://github.com/yourusername/BiocNMF
+BugReports: https://github.com/MicTott/BiocNMF/issues
+URL: https://github.com/MicTott/BiocNMF
 SystemRequirements: C++14
 RoxygenNote: 7.3.2
