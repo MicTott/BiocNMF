@@ -38,7 +38,7 @@ reference:
 - title: Main Functions
   desc: Core NMF and consensus NMF functions
   contents:
-  - runNMF
+  - runBiocNMF
   - runConsensusNMF
 
 - title: Standard NMF Accessors
@@ -63,6 +63,8 @@ reference:
 - title: Visualization
   desc: Plotting functions for diagnostics and results
   contents:
+  - vizUMAP
+  - vizDimRed
   - plotStability
   - plotStabilityComparison
   - plotGEPs
