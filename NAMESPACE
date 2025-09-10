@@ -9,6 +9,7 @@ importFrom(RcppML, nmf)
 importFrom(stats, rnorm, cor, reorder, kmeans, dist, hclust, cophenetic, as.dist, sd, median)
 importFrom(utils, packageDescription)
 importFrom(parallel, mclapply)
+importFrom(Matrix, Matrix)
 
 export(runNMF)
 export(getBasis)

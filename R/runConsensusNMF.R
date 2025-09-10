@@ -36,11 +36,22 @@
 #' @importFrom RcppML nmf
 #' @importFrom S4Vectors metadata<-
 #' @importFrom parallel mclapply
+#' @importFrom Matrix Matrix
 runConsensusNMF <- function(x, k_range = 5:15, n_runs = 100, 
                            assay = "logcounts", name = "cNMF",
                            subset_row = NULL, tol = 1e-5, maxit = 100,
                            L1 = c(0, 0), seed = NULL, verbose = TRUE,
                            n_cores = 1, ...) {
+    
+    # Ensure Matrix package is available for RcppML
+    if (!requireNamespace("Matrix", quietly = TRUE)) {
+        stop("Package 'Matrix' is required but not available")
+    }
+    
+    # Attach Matrix to search path if not already attached (RcppML requirement)
+    if (!"package:Matrix" %in% search()) {
+        attachNamespace("Matrix")
+    }
     
     # Input validation
     if (!is(x, "SingleCellExperiment")) {

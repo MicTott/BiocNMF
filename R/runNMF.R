@@ -35,9 +35,20 @@
 #' @importFrom RcppML nmf
 #' @importFrom SingleCellExperiment reducedDim<-
 #' @importFrom S4Vectors metadata<-
+#' @importFrom Matrix Matrix
 runNMF <- function(x, k, assay = "logcounts", name = "NMF", 
                    subset_row = NULL, tol = 1e-5, maxit = 100,
                    L1 = c(0, 0), seed = NULL, verbose = TRUE, ...) {
+    
+    # Ensure Matrix package is available and attached for RcppML
+    if (!requireNamespace("Matrix", quietly = TRUE)) {
+        stop("Package 'Matrix' is required but not available")
+    }
+    
+    # Load Matrix library if not already loaded (RcppML needs it on search path)
+    if (!"package:Matrix" %in% search()) {
+        library(Matrix, quietly = TRUE)
+    }
     
     # Input validation
     if (!is(x, "SingleCellExperiment")) {

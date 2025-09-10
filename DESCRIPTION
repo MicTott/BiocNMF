@@ -25,7 +25,8 @@ Imports:
     S4Vectors,
     SummarizedExperiment,
     RcppML,
-    parallel
+    parallel,
+    Matrix
 Suggests:
     testthat (>= 3.0.0),
     knitr,
@@ -36,7 +37,10 @@ Suggests:
     scran,
     uwot,
     SpatialExperiment,
-    ggplot2
+    ggplot2,
+    scRNAseq,
+    pheatmap,
+    patchwork
 VignetteBuilder: knitr
 biocViews: DimensionReduction, FeatureExtraction, Clustering, 
     RNASeq, SingleCell, Transcriptomics, Spatial, Software
