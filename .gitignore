@@ -1,0 +1,42 @@
+# R package development
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# R package build artifacts
+*.tar.gz
+*.zip
+.Rbuildignore
+
+# R check artifacts
+*.Rcheck/
+00check.log
+
+# Documentation artifacts
+docs/
+_pkgdown.yml
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Output files
+*.pdf
+*.html
+plots/
+
+# Package-specific
+inst/doc/
+vignettes/*.html
+vignettes/*.pdf

@@ -1,0 +1,109 @@
+---
+title: "Fast NMF for Single Cell and Spatial Data with BiocNMF"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{Fast NMF for Single Cell and Spatial Data with BiocNMF}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduction
+
+BiocNMF provides fast non-negative matrix factorization (NMF) for SingleCellExperiment and SpatialExperiment objects using the high-performance RcppML backend. NMF is useful for dimensionality reduction, feature extraction, and identifying patterns in genomic data.
+
+# Installation
+
+```{r, eval=FALSE}
+# From Bioconductor (when available)
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("BiocNMF")
+```
+
+# Quick Start
+
+```{r setup, message=FALSE}
+library(BiocNMF)
+library(scuttle)
+```
+
+## Basic Usage with SingleCellExperiment
+
+```{r}
+# Create example data
+sce <- mockSCE(ngenes = 1000, ncells = 200)
+sce <- logNormCounts(sce)
+
+# Run NMF with 10 factors
+sce <- runNMF(sce, k = 10, verbose = FALSE)
+
+# Access results
+nmf_coords <- reducedDim(sce, "NMF")
+dim(nmf_coords)
+
+# Get basis matrix (gene loadings)
+basis <- getBasis(sce)
+dim(basis)
+
+# Get top features for each factor
+top_genes <- getTopFeatures(sce, n = 5)
+head(top_genes, 2)
+```
+
+## Advanced Usage
+
+```{r}
+# Use different assay and parameters
+sce <- runNMF(sce, k = 15, assay = "logcounts", 
+              name = "NMF_15", L1 = c(0.01, 0.01), verbose = FALSE)
+
+# Multiple NMF results can be stored
+reducedDimNames(sce)
+```
+
+## Consensus NMF
+
+For more robust results, use consensus NMF which runs multiple NMF iterations and combines results:
+
+```{r}
+# Run consensus NMF across a range of k values
+sce <- runConsensusNMF(sce, k_range = 8:12, n_runs = 20, verbose = FALSE)
+
+# Get stability metrics to see optimal k selection
+stability <- getStabilityMetrics(sce)
+print(stability)
+
+# Access consensus results
+optimal_k <- getOptimalK(sce)
+geps <- getConsensusGEPs(sce)
+usage <- getGEPUsage(sce)
+
+# Get top genes for each program
+top_genes <- getTopGEPFeatures(sce, n = 10)
+head(top_genes, 2)
+```
+
+## Visualization
+
+```{r, eval=FALSE}
+# Plot stability metrics (requires ggplot2)
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  plotStability(sce)
+  plotGEPs(sce, programs = 1:3, n_genes = 15)
+}
+```
+
+# Session Information
+
+```{r}
+sessionInfo()
+```
