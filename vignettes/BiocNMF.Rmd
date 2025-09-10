@@ -44,7 +44,7 @@ sce <- mockSCE(ngenes = 1000, ncells = 200)
 sce <- logNormCounts(sce)
 
 # Run NMF with 10 factors
-sce <- runNMF(sce, k = 10, verbose = FALSE)
+sce <- runBiocNMF(sce, k = 10, verbose = FALSE)
 
 # Access results
 nmf_coords <- reducedDim(sce, "NMF")
@@ -63,7 +63,7 @@ head(top_genes, 2)
 
 ```{r}
 # Use different assay and parameters
-sce <- runNMF(sce, k = 15, assay = "logcounts", 
+sce <- runBiocNMF(sce, k = 15, assay = "logcounts", 
               name = "NMF_15", L1 = c(0.01, 0.01), verbose = FALSE)
 
 # Multiple NMF results can be stored
