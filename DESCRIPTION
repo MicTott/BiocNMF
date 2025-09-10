@@ -38,9 +38,12 @@ Suggests:
     scater,
     uwot,
     ggrepel,
+    pheatmap,
+    clusterProfiler,
+    org.Hs.eg.db,
+    org.Mm.eg.db,
     SpatialExperiment,
     scRNAseq,
-    pheatmap,
     patchwork
 VignetteBuilder: knitr
 biocViews: DimensionReduction, FeatureExtraction, Clustering, 
