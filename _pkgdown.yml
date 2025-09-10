@@ -1,0 +1,83 @@
+url: https://mictott.github.io/BiocNMF/
+template:
+  bootstrap: 5
+  
+home:
+  title: "BiocNMF: Fast Non-negative Matrix Factorization for Single Cell and Spatial Data"
+  description: >
+    High-performance non-negative matrix factorization (NMF) methods for 
+    SingleCellExperiment and SpatialExperiment objects using the RcppML backend.
+
+navbar:
+  structure:
+    left:  [intro, reference, articles, tutorials, news]
+    right: [search, github]
+  components:
+    home:
+      icon: fas fa-home fa-lg
+      href: index.html
+    reference:
+      text: Reference
+      href: reference/index.html
+    articles:
+      text: Articles
+      menu:
+      - text: Getting Started
+        href: articles/getting-started.html
+      - text: Consensus NMF
+        href: articles/consensus-nmf.html
+    news:
+      text: Changelog
+      href: news/index.html
+    github:
+      icon: fab fa-github fa-lg
+      href: https://github.com/MicTott/BiocNMF
+      aria-label: GitHub
+
+reference:
+- title: Main Functions
+  desc: Core NMF and consensus NMF functions
+  contents:
+  - runNMF
+  - runConsensusNMF
+
+- title: Standard NMF Accessors
+  desc: Access standard NMF results
+  contents:
+  - getBasis
+  - getCoefficients
+  - getTopFeatures
+  - reconstructNMF
+
+- title: Consensus NMF Accessors
+  desc: Access consensus NMF results
+  contents:
+  - getConsensusGEPs
+  - getGEPUsage
+  - getStabilityMetrics
+  - getOptimalK
+  - getTopGEPFeatures
+  - getConsensusNMFInfo
+  - getAvailableK
+
+- title: Visualization
+  desc: Plotting functions for diagnostics and results
+  contents:
+  - plotStability
+  - plotStabilityComparison
+  - plotGEPs
+  - plotGEPUsage
+
+articles:
+- title: Tutorials
+  navbar: ~
+  contents:
+  - getting-started
+  - consensus-nmf
+
+authors:
+  Michael Totty:
+    href: https://github.com/MicTott
+
+development:
+  mode: auto

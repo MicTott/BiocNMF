@@ -41,6 +41,6 @@ VignetteBuilder: knitr
 biocViews: DimensionReduction, FeatureExtraction, Clustering, 
     RNASeq, SingleCell, Transcriptomics, Spatial, Software
 BugReports: https://github.com/MicTott/BiocNMF/issues
-URL: https://github.com/MicTott/BiocNMF
+URL: https://github.com/MicTott/BiocNMF, https://mictott.github.io/BiocNMF/
 SystemRequirements: C++14
 RoxygenNote: 7.3.2

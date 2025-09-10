@@ -1,0 +1,292 @@
+---
+title: "Getting Started with BiocNMF"
+author: "Michael Totty"
+date: "`r Sys.Date()`"
+output: 
+  BiocStyle::html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{Getting Started with BiocNMF}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+# Introduction to Non-negative Matrix Factorization
+
+Non-negative Matrix Factorization (NMF) is a powerful dimensionality reduction technique that decomposes a non-negative data matrix into two non-negative factor matrices. For single-cell and spatial genomics data, NMF provides biologically interpretable gene expression programs and their usage patterns across cells.
+
+## Mathematical Foundation
+
+Given a gene expression matrix **X** (genes × cells) with non-negative values, NMF factorizes it into:
+
+**X** ≈ **W** × **H**
+
+Where:
+- **W** is the basis matrix (genes × k programs) containing gene expression programs
+- **H** is the coefficient matrix (k programs × cells) containing program usage per cell
+- **k** is the number of latent factors (gene expression programs)
+
+## Why NMF for Single-cell and Spatial Data?
+
+### Biological Interpretability
+Unlike PCA or other linear methods, NMF's non-negativity constraint ensures that:
+- Gene expression programs contain only positive gene weights
+- Cell usage patterns are additive combinations of programs
+- Results directly correspond to biological processes
+
+### Advantages over Traditional Methods
+
+1. **Parts-based decomposition**: Identifies co-expressed gene modules
+2. **Sparse representations**: Naturally selects relevant genes per program
+3. **Additive mixing**: Cells can express multiple programs simultaneously
+4. **Robust to noise**: Less sensitive to technical artifacts than correlation-based methods
+
+### Applications in Genomics
+
+- **Cell type identification**: Programs often correspond to cell type signatures
+- **Pathway analysis**: Programs capture coordinated biological processes  
+- **Spatial patterns**: Identifies spatially coherent expression programs
+- **Temporal dynamics**: Tracks program changes across conditions/time
+
+# Why RcppML?
+
+BiocNMF uses the **RcppML** package as its computational backend for several key advantages:
+
+## Performance Benefits
+
+- **C++ implementation**: Orders of magnitude faster than R-based alternatives
+- **Memory efficient**: Optimized for large single-cell datasets
+- **Parallel processing**: Multi-core support for faster computation
+- **Sparse matrix support**: Handles typical sparse single-cell data efficiently
+
+## Algorithmic Advantages
+
+- **Robust convergence**: Uses coordinate descent with proven convergence guarantees
+- **Multiple initialization**: Supports various initialization strategies
+- **Regularization options**: L1/L2 penalties for sparsity and smoothness
+- **Missing value handling**: Graceful handling of dropout events
+
+```{r load-packages}
+library(BiocNMF)
+library(SingleCellExperiment)
+library(scuttle)
+library(scater)
+library(ggplot2)
+```
+
+# Basic NMF Analysis
+
+## Preparing Your Data
+
+```{r create-data}
+# Create example single-cell data
+set.seed(42)
+sce <- mockSCE(ngenes = 1000, ncells = 500)
+
+# Add some structure to make NMF more interesting
+sce$cell_type <- sample(c("TypeA", "TypeB", "TypeC"), ncol(sce), replace = TRUE)
+
+# Normalize the data
+sce <- logNormCounts(sce)
+
+# Add reduced dimensions for visualization
+sce <- runPCA(sce, ncomponents = 20)
+sce <- runUMAP(sce, dimred = "PCA")
+```
+
+## Running NMF
+
+The core function `runNMF()` performs standard NMF decomposition:
+
+```{r run-nmf, eval=FALSE}
+# Run NMF with 8 programs
+sce <- runNMF(sce, k = 8, verbose = FALSE)
+
+# Check what was added to the object
+reducedDimNames(sce)
+names(metadata(sce))
+```
+
+## Accessing Results
+
+BiocNMF provides convenient accessor functions:
+
+```{r access-results, eval=FALSE}
+# Get coefficient matrix (cell usage of programs)
+coefficients <- getCoefficients(sce)
+dim(coefficients)  # cells × programs
+
+# Get basis matrix (gene expression programs)
+basis <- getBasis(sce)
+dim(basis)  # genes × programs
+
+# Get top contributing genes per program
+top_genes <- getTopFeatures(sce, n = 10)
+head(top_genes, 2)
+```
+
+## Visualization
+
+```{r visualize-results, fig.width=10, fig.height=6, eval=FALSE}
+# Plot program usage on UMAP
+plotReducedDim(sce, dimred = "UMAP", colour_by = "NMF_1", point_size = 0.8) +
+  scale_color_viridis_c(name = "Program 1\nUsage") +
+  ggtitle("NMF Program 1 Usage")
+```
+
+```{r plot-programs, fig.width=12, fig.height=8, eval=FALSE}
+# Heatmap of top genes per program
+library(pheatmap)
+
+# Get top 20 genes per program
+top_genes_20 <- getTopFeatures(sce, n = 20)
+top_gene_names <- unique(unlist(top_genes_20))
+
+# Create matrix of top genes × programs
+basis_subset <- basis[top_gene_names, ]
+
+# Plot heatmap
+pheatmap(basis_subset, 
+         scale = "row",
+         cluster_cols = FALSE,
+         show_rownames = FALSE,
+         main = "Gene Expression Programs (Top 20 genes per program)",
+         color = colorRampPalette(c("blue", "white", "red"))(100))
+```
+
+# Parameter Selection
+
+## Choosing k (Number of Programs)
+
+The number of programs k is a critical parameter. Consider:
+
+### Biological Factors
+- Expected number of cell types/states
+- Complexity of biological processes
+- Dataset size and heterogeneity
+
+### Computational Approaches
+- **Reconstruction error**: Plot error vs k to find elbow point
+- **Stability metrics**: Use consensus NMF (see cNMF vignette)
+- **Cross-validation**: Hold-out validation approaches
+
+```{r parameter-selection, eval=FALSE}
+# Test different k values
+k_values <- c(4, 6, 8, 10, 12)
+reconstruction_errors <- numeric(length(k_values))
+
+for (i in seq_along(k_values)) {
+  sce_temp <- runNMF(sce, k = k_values[i], verbose = FALSE)
+  reconstructed <- reconstructNMF(sce_temp)
+  
+  # Calculate reconstruction error (Frobenius norm)
+  original_matrix <- assay(sce_temp, "logcounts")
+  reconstruction_errors[i] <- norm(original_matrix - reconstructed, type = "F")
+}
+
+# Plot reconstruction error
+error_df <- data.frame(k = k_values, error = reconstruction_errors)
+ggplot(error_df, aes(x = k, y = error)) +
+  geom_line() +
+  geom_point(size = 3) +
+  labs(x = "Number of Programs (k)", 
+       y = "Reconstruction Error",
+       title = "NMF Reconstruction Error vs k") +
+  theme_minimal()
+```
+
+## Other Important Parameters
+
+### Matrix Selection
+- **`assay`**: Which assay to use (typically "logcounts" or "counts")
+- Raw counts for Poisson NMF, log-normalized for Gaussian
+
+### Algorithmic Parameters
+- **`seed`**: Set for reproducible results
+- **`tol`**: Convergence tolerance (default usually sufficient)
+- **`maxit`**: Maximum iterations (increase for difficult convergence)
+
+```{r parameter-examples, eval=FALSE}
+# Example with custom parameters
+sce <- runNMF(sce, 
+              k = 8,
+              assay = "logcounts",
+              seed = 123,
+              tol = 1e-6,
+              maxit = 1000,
+              name = "NMF_custom")
+```
+
+# Integration with Bioconductor Workflows
+
+## Working with Different Object Types
+
+```{r different-objects, eval=FALSE}
+# SingleCellExperiment
+sce <- runNMF(sce, k = 8)
+
+# SpatialExperiment (requires SpatialExperiment package)
+# spe <- runNMF(spe, k = 8)
+
+# Can also work with SummarizedExperiment
+# se <- runNMF(se, k = 8)
+```
+
+## Downstream Analysis
+
+```{r downstream, eval=FALSE}
+# Add NMF coordinates to metadata for downstream tools
+colData(sce)$NMF_1 <- reducedDim(sce, "NMF")[, 1]
+colData(sce)$NMF_2 <- reducedDim(sce, "NMF")[, 2]
+
+# Use in differential expression
+library(scran)
+markers <- findMarkers(sce, groups = sce$cell_type, 
+                      block = cut(colData(sce)$NMF_1, 3))
+```
+
+# Best Practices
+
+## Data Preprocessing
+1. **Quality control**: Remove low-quality cells and genes
+2. **Normalization**: Use log-normalized counts for most applications
+3. **Feature selection**: Consider highly variable genes for large datasets
+4. **Scaling**: Generally not needed due to NMF's scale invariance
+
+## Interpretation Guidelines
+1. **Program naming**: Annotate programs based on top genes and GO enrichment
+2. **Cell assignment**: Use dominant program or soft clustering approaches
+3. **Validation**: Compare with known markers and biological expectations
+4. **Robustness**: Test with different k values and random seeds
+
+## Performance Tips
+1. **Subset genes**: Use top variable genes for very large datasets
+2. **Parallel processing**: Utilize multiple cores when available
+3. **Memory management**: Consider data sparsity and object size
+4. **Batch processing**: Process large datasets in chunks if needed
+
+# Next Steps
+
+For more robust and sophisticated analysis, consider:
+
+1. **Consensus NMF**: See the detailed cNMF vignette for stability analysis
+2. **Program annotation**: Use gene set enrichment analysis
+3. **Trajectory analysis**: Combine NMF with pseudotime methods
+4. **Spatial analysis**: Apply to spatial transcriptomics data
+
+# Session Information
+
+```{r session-info}
+sessionInfo()
+```

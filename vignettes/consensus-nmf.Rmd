@@ -1,0 +1,518 @@
+---
+title: "Consensus NMF with BiocNMF"
+author: "Michael Totty"
+date: "`r Sys.Date()`"
+output: 
+  BiocStyle::html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{Consensus NMF with BiocNMF}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 6,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Introduction to Consensus NMF
+
+Consensus Non-negative Matrix Factorization (cNMF) addresses a fundamental limitation of standard NMF: **instability across random initializations**. While standard NMF can produce different results with different random seeds, cNMF provides robust, reproducible gene expression programs through consensus clustering.
+
+## The Stability Problem
+
+Standard NMF optimization is non-convex, leading to multiple local optima. This means:
+- Different random initializations produce different solutions
+- Gene expression programs may not be reproducible
+- Optimal k selection becomes challenging
+- Biological interpretation can be inconsistent
+
+## The Consensus Solution
+
+cNMF, developed by Kotliar et al. (eLife 2019), solves this through:
+
+1. **Multiple NMF runs** with different initializations
+2. **Consensus clustering** to group similar gene expression programs
+3. **Stability metrics** for objective k selection
+4. **Robust final programs** through clustering and refitting
+
+```{r load-packages}
+library(BiocNMF)
+library(SingleCellExperiment)
+library(scuttle)
+library(scater)
+library(ggplot2)
+library(pheatmap)
+```
+
+# The cNMF Algorithm
+
+## Step-by-Step Methodology
+
+### 1. Multiple NMF Factorizations
+For each k value, run NMF many times (typically 100-200) with different random initializations:
+
+```
+For k in k_range:
+    For run in 1:n_runs:
+        W[k,run], H[k,run] = NMF(X, k, random_seed=run)
+```
+
+### 2. Gene Expression Program Collection
+Collect all gene expression programs (columns of W matrices) across runs.
+
+### 3. Density Filtering
+Remove outlier programs using local density estimation:
+- Calculate pairwise cosine similarities between programs
+- Compute local density for each program
+- Filter programs below density threshold
+- Reduces noise and computational burden
+
+### 4. Consensus Clustering
+Cluster similar programs using k-means:
+- Apply k-means clustering to filtered programs
+- Group similar gene expression programs together
+- Each cluster represents a consensus program
+
+### 5. Consensus Matrix Construction
+Build consensus matrix showing co-clustering frequencies:
+- For each pair of programs: how often they cluster together
+- Provides stability assessment for each k value
+- Used for final stability metrics
+
+### 6. Final Program Selection
+- Choose optimal k based on stability metrics
+- Extract representative programs from each cluster
+- Refit usage matrix using non-negative least squares
+
+## Implementation Details
+
+BiocNMF implements the exact algorithm from Kotliar et al. with these key components:
+
+```{r algorithm-demo, eval=FALSE}
+# Conceptual overview (actual implementation is in C++/optimized R)
+runConsensusNMF <- function(x, k_range, n_runs, ...) {
+  for (k in k_range) {
+    # 1. Multiple NMF runs
+    nmf_runs <- replicate(n_runs, RcppML::nmf(data, k = k))
+    
+    # 2. Collect all programs
+    all_programs <- do.call(cbind, lapply(nmf_runs, function(r) r$w))
+    
+    # 3. Density filtering
+    filtered_programs <- applyDensityFiltering(all_programs)
+    
+    # 4. Consensus clustering
+    clusters <- kmeans(t(filtered_programs), centers = k)
+    
+    # 5. Build consensus matrix
+    consensus_mat <- buildConsensusMatrix(clusters)
+    
+    # 6. Calculate stability metrics
+    stability <- calculateStabilityMetrics(consensus_mat)
+  }
+  
+  # Select optimal k and refit
+  optimal_k <- selectOptimalK(stability_results)
+  final_programs <- extractConsensusPrograms(optimal_k)
+  usage_matrix <- refitUsageMatrix(data, final_programs)
+}
+```
+
+# Running Consensus NMF
+
+## Basic Usage
+
+```{r create-data}
+# Create example data with more structure for demonstration
+set.seed(42)
+sce <- mockSCE(ngenes = 1000, ncells = 800)
+
+# Add cell type structure
+n_types <- 5
+sce$cell_type <- sample(paste0("Type", 1:n_types), ncol(sce), replace = TRUE)
+
+# Normalize
+sce <- logNormCounts(sce)
+
+# Add visualization coordinates
+sce <- runPCA(sce, ncomponents = 20)
+sce <- runUMAP(sce, dimred = "PCA")
+```
+
+```{r run-cnmf}
+# Run consensus NMF
+# Note: Using small parameters for vignette speed
+# In practice, use n_runs = 100-200 and broader k_range
+sce <- runConsensusNMF(sce, 
+                       k_range = 4:8,           # Test k values
+                       n_runs = 20,             # Number of runs per k
+                       n_cores = 1,             # Parallel cores
+                       verbose = TRUE)
+
+# Check what was added
+names(metadata(sce))
+reducedDimNames(sce)
+```
+
+## Parameter Selection
+
+### Critical Parameters
+
+**k_range**: Range of k values to test
+- Start with biologically expected range
+- Consider 2-3x expected number of cell types
+- Broader ranges provide better stability assessment
+
+```{r k-range-example, eval=FALSE}
+# For 5 expected cell types, test:
+k_range = 3:12    # Conservative range
+k_range = 2:15    # Broader exploration
+```
+
+**n_runs**: Number of NMF runs per k value
+- More runs = better stability estimates
+- Minimum: 50 runs for reasonable estimates
+- Recommended: 100-200 runs for publication quality
+
+```{r n-runs-example, eval=FALSE}
+n_runs = 50      # Quick exploration
+n_runs = 100     # Standard analysis  
+n_runs = 200     # High confidence
+```
+
+### Algorithmic Parameters
+
+**density_threshold**: Outlier filtering stringency
+- Higher values = more aggressive filtering
+- Range: 0.1 (lenient) to 0.8 (strict)
+- Default: 0.5 (balanced)
+
+**n_cores**: Parallel processing
+- Use available cores - 1 for system responsiveness
+- Scales nearly linearly with core count
+
+```{r advanced-parameters, eval=FALSE}
+sce <- runConsensusNMF(sce,
+                       k_range = 5:15,
+                       n_runs = 100,
+                       density_threshold = 0.4,    # Lenient filtering
+                       n_cores = 4,                # Parallel processing
+                       seed = 123)                 # Reproducibility
+```
+
+# Accessing and Interpreting Results
+
+## Consensus Gene Expression Programs
+
+```{r access-geps}
+# Get consensus gene expression programs
+consensus_geps <- getConsensusGEPs(sce)
+dim(consensus_geps)  # genes × programs
+
+# Get optimal k selected by algorithm
+optimal_k <- getOptimalK(sce)
+cat("Optimal k selected:", optimal_k, "\n")
+
+# Get top genes per program
+top_genes <- getTopGEPFeatures(sce, n = 15)
+head(top_genes[[1]])  # Top genes for program 1
+```
+
+## Program Usage
+
+```{r access-usage}
+# Get program usage per cell
+gep_usage <- getGEPUsage(sce)
+dim(gep_usage)  # cells × programs
+
+# Usage is also stored in reducedDims
+identical(gep_usage, reducedDim(sce, "cNMF"))
+```
+
+## Stability Metrics
+
+```{r stability-metrics}
+# Get comprehensive stability metrics
+stability <- getStabilityMetrics(sce)
+print(stability)
+
+# Individual metrics explained:
+# - stability: clustering-based stability (higher = more stable)
+# - silhouette: silhouette score of consensus clustering
+# - reproducibility: how often same programs are recovered
+# - cophenetic_correlation: consensus matrix quality
+```
+
+## Accessing Different k Values
+
+```{r different-k}
+# Access results for specific k values
+available_k <- getAvailableK(sce)
+cat("Available k values:", available_k, "\n")
+
+# Get results for k=6 specifically
+geps_k6 <- getConsensusGEPs(sce, k = 6)
+usage_k6 <- getGEPUsage(sce, k = 6)
+dim(geps_k6)
+dim(usage_k6)
+```
+
+# Diagnostic Plots
+
+## Stability Assessment
+
+The most important diagnostic is the stability plot for k selection:
+
+```{r plot-stability, fig.width=10, fig.height=6}
+# Plot stability metrics across k values
+plotStability(sce)
+```
+
+**Interpretation**:
+- **Stability**: Primary metric - choose k at peak or plateau
+- **Silhouette**: Quality of consensus clustering
+- **Reproducibility**: Consistency across runs
+- **Cophenetic**: Consensus matrix block structure
+
+Look for:
+- Peak in stability curve
+- High silhouette scores (>0.5)
+- Stable or increasing reproducibility
+- High cophenetic correlation
+
+## Gene Expression Program Heatmaps
+
+```{r plot-geps, fig.width=12, fig.height=8}
+# Plot gene expression programs
+plotGEPs(sce, programs = 1:getOptimalK(sce), n_genes = 20)
+```
+
+**Interpretation**:
+- Each column = one gene expression program
+- Each row = one gene (top contributors shown)
+- Red = high expression, Blue = low expression
+- Look for distinct, interpretable gene sets
+
+## Program Usage Visualization
+
+```{r plot-usage, fig.width=12, fig.height=8}
+# Plot program usage on UMAP
+plotGEPUsage(sce, programs = 1:min(4, getOptimalK(sce)), reduction = "UMAP")
+```
+
+**Interpretation**:
+- Each panel shows usage of one program
+- Continuous colors = program activity levels
+- Spatial patterns often reveal biological structures
+- Look for cell type or state-specific patterns
+
+# Advanced Analysis
+
+## Manual k Selection
+
+Sometimes you may want to override automatic k selection:
+
+```{r manual-k}
+# Get detailed information about all k values
+cnmf_info <- getConsensusNMFInfo(sce)
+print(cnmf_info)
+
+# Force usage of specific k (e.g., k=6)
+# This changes what getConsensusGEPs() returns by default
+metadata(sce)$cNMF$cNMF$optimal_k <- 6
+
+# Verify change
+cat("New optimal k:", getOptimalK(sce), "\n")
+```
+
+## Program Annotation
+
+```{r program-annotation}
+# Get top genes for biological annotation
+top_genes_detailed <- getTopGEPFeatures(sce, n = 50)
+
+# Example: annotate programs based on top genes
+opt_k <- getOptimalK(sce)
+program_annotations <- character(opt_k)
+for (i in 1:opt_k) {
+  top_10 <- head(top_genes_detailed[[i]], 10)
+  program_annotations[i] <- paste0("Program_", i, " (", 
+                                  paste(head(top_10, 3), collapse = ", "), 
+                                  "...)")
+}
+print(program_annotations)
+```
+
+## Robustness Assessment
+
+```{r robustness, eval=FALSE}
+# Test robustness with different parameters
+sce_alt1 <- runConsensusNMF(sce, k_range = 4:8, n_runs = 50, 
+                           density_threshold = 0.3)
+sce_alt2 <- runConsensusNMF(sce, k_range = 4:8, n_runs = 50, 
+                           density_threshold = 0.7)
+
+# Compare optimal k selections
+c(original = getOptimalK(sce),
+  lenient = getOptimalK(sce_alt1),
+  strict = getOptimalK(sce_alt2))
+```
+
+# Computational Considerations
+
+## Performance Scaling
+
+cNMF is computationally intensive. Runtime scales with:
+
+- **n_runs**: Linear scaling (100 runs = 2x time vs 50 runs)
+- **k_range**: Linear scaling (each k adds ~n_runs time)
+- **Data size**: Quadratic in min(genes, cells)
+- **n_cores**: Near-linear speedup with parallelization
+
+## Memory Requirements
+
+Memory usage depends on:
+- Storing all intermediate NMF results
+- Consensus matrix construction
+- Peak usage during clustering steps
+
+For large datasets (>50k cells), consider:
+- Reducing n_runs (minimum 50)
+- Narrower k_range based on prior knowledge
+- Using high-memory computing environments
+
+## Optimization Tips
+
+```{r optimization-tips, eval=FALSE}
+# For large datasets
+sce <- runConsensusNMF(sce,
+                       k_range = 8:12,          # Focused range
+                       n_runs = 75,             # Reduced runs
+                       n_cores = 8,             # Max parallelization
+                       density_threshold = 0.6) # Aggressive filtering
+
+# For exploration with quick turnaround
+sce <- runConsensusNMF(sce,
+                       k_range = 5:10,
+                       n_runs = 25,             # Very fast
+                       n_cores = 4)
+```
+
+# Integration with Downstream Analysis
+
+## Cell Type Assignment
+
+```{r cell-assignment}
+# Assign cells to dominant programs
+usage_matrix <- getGEPUsage(sce)
+dominant_programs <- apply(usage_matrix, 1, which.max)
+
+# Add to cell metadata
+colData(sce)$dominant_program <- paste0("Program_", dominant_programs)
+
+# Compare with original cell types (if available)
+table(colData(sce)$dominant_program, colData(sce)$cell_type)
+```
+
+## Differential Program Usage
+
+```{r diff-usage}
+# Test for differential program usage between conditions
+library(scran)
+
+# Example: differential usage between cell types
+colData(sce)$program_1_usage <- usage_matrix[, 1]
+
+# Statistical testing
+results <- findMarkers(sce, 
+                      groups = sce$cell_type,
+                      test.type = "t")
+```
+
+## Gene Set Enrichment
+
+```{r enrichment, eval=FALSE}
+# Example pathway enrichment (requires additional packages)
+library(clusterProfiler)
+library(org.Hs.eg.db)
+
+# Get top genes for program 1
+program_1_genes <- getTopGEPFeatures(sce, n = 100)[[1]]
+
+# Run enrichment analysis
+enrichment <- enrichGO(gene = program_1_genes,
+                      OrgDb = org.Hs.eg.db,
+                      ont = "BP",
+                      readable = TRUE)
+```
+
+# Best Practices
+
+## Parameter Selection Guidelines
+
+1. **Start broad**: Use wide k_range for initial exploration
+2. **Sufficient runs**: Minimum 50 runs, prefer 100+ for final analysis
+3. **Multiple thresholds**: Test different density_threshold values
+4. **Reproducibility**: Use set.seed() for reproducible results
+
+## Quality Control
+
+1. **Stability curves**: Should show clear peaks or plateaus
+2. **Program interpretation**: Programs should be biologically meaningful
+3. **Usage patterns**: Should correlate with known cell types/states
+4. **Consistency**: Results should be robust to parameter changes
+
+## Common Pitfalls
+
+1. **Too few runs**: <50 runs can give unstable results
+2. **Narrow k_range**: May miss optimal k value
+3. **Over-interpretation**: Programs may not always correspond to cell types
+4. **Ignoring stability**: Don't just pick k based on expectations
+
+# Comparison with Standard NMF
+
+```{r comparison, fig.width=12, fig.height=6, eval=FALSE}
+# Run standard NMF with same k
+opt_k <- getOptimalK(sce)
+sce <- runNMF(sce, k = opt_k, name = "StandardNMF")
+
+# Compare stability by running multiple times
+set.seed(123)
+nmf_runs <- replicate(10, {
+  sce_temp <- runNMF(sce, k = opt_k, verbose = FALSE)
+  getBasis(sce_temp)[, 1]  # First program
+}, simplify = FALSE)
+
+# Calculate coefficient of variation across runs
+cv_standard <- apply(do.call(cbind, nmf_runs), 1, function(x) sd(x)/mean(x))
+
+# Compare with cNMF stability (programs should be more stable)
+cnmf_program_1 <- getConsensusGEPs(sce)[, 1]
+
+cat("Standard NMF variability (mean CV):", round(mean(cv_standard, na.rm = TRUE), 3), "\n")
+cat("cNMF provides stable programs across runs\n")
+```
+
+# Session Information
+
+```{r session-info}
+sessionInfo()
+```
+
+# References
+
+1. Kotliar D, Veres A, Nagy MA, et al. Identifying gene expression programs of cell-type identity and cellular activity with single-cell RNA-Seq. *eLife*. 2019;8:e43803.
+
+2. DeBruine ZJ, Melcher K, Triche TJ. High-performance non-negative matrix factorization for large single cell data. *bioRxiv*. 2021.
+
+3. Lee DD, Seung HS. Learning the parts of objects by non-negative matrix factorization. *Nature*. 1999;401(6755):788-791.
