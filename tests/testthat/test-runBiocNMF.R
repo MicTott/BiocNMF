@@ -1,4 +1,4 @@
-test_that("runNMF works with SingleCellExperiment", {
+test_that("runBiocNMF works with SingleCellExperiment", {
     skip_if_not_installed("scuttle")
     
     library(scuttle)
@@ -6,7 +6,7 @@ test_that("runNMF works with SingleCellExperiment", {
     sce <- logNormCounts(sce)
     
     # Test basic functionality
-    sce <- runNMF(sce, k = 5, verbose = FALSE)
+    sce <- runBiocNMF(sce, k = 5, verbose = FALSE)
     
     # Check that results are stored correctly
     expect_true("NMF" %in% reducedDimNames(sce))

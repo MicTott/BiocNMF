@@ -20,6 +20,6 @@ List of character vectors, each containing top features for a factor
 Calculate feature loadings (which genes contribute most to each factor)
 }
 \examples{
-# sce <- runNMF(sce, k = 10)
+# sce <- runBiocNMF(sce, k = 10)
 # top_genes <- getTopFeatures(sce, n = 20)
 }

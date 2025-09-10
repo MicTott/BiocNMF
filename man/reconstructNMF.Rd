@@ -18,6 +18,6 @@ Reconstructed matrix (basis %*% t(coefficients))
 Reconstruct original matrix from NMF factors
 }
 \examples{
-# sce <- runNMF(sce, k = 10)
+# sce <- runBiocNMF(sce, k = 10)
 # reconstructed <- reconstructNMF(sce)
 }

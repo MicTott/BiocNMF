@@ -18,6 +18,6 @@ Matrix with cells x factors (coefficient matrix, same as reducedDim)
 Extract NMF coefficient matrix from SingleCellExperiment object
 }
 \examples{
-# sce <- runNMF(sce, k = 10)
+# sce <- runBiocNMF(sce, k = 10)
 # coeffs <- getCoefficients(sce)
 }

@@ -18,6 +18,6 @@ Matrix with features x factors (basis matrix)
 Extract NMF basis matrix from SingleCellExperiment object
 }
 \examples{
-# sce <- runNMF(sce, k = 10)
+# sce <- runBiocNMF(sce, k = 10)
 # basis <- getBasis(sce)
 }

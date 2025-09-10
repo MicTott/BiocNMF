@@ -12,6 +12,7 @@ This package provides high-performance non-negative matrix factorization (NMF) m
 Useful links:
 \itemize{
   \item \url{https://github.com/MicTott/BiocNMF}
+  \item \url{https://mictott.github.io/BiocNMF/}
   \item Report bugs at \url{https://github.com/MicTott/BiocNMF/issues}
 }
 

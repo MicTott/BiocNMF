@@ -6,7 +6,7 @@
 #' @return Matrix with features x factors (basis matrix)
 #' @export
 #' @examples
-#' # sce <- runNMF(sce, k = 10)
+#' # sce <- runBiocNMF(sce, k = 10)
 #' # basis <- getBasis(sce)
 getBasis <- function(x, name = "NMF") {
     if (!is(x, "SingleCellExperiment")) {
@@ -15,7 +15,7 @@ getBasis <- function(x, name = "NMF") {
     
     basis_name <- paste0(name, "_basis")
     if (!basis_name %in% names(metadata(x))) {
-        stop("Basis matrix '", basis_name, "' not found in metadata. Run runNMF() first.")
+        stop("Basis matrix '", basis_name, "' not found in metadata. Run runBiocNMF() first.")
     }
     
     return(metadata(x)[[basis_name]])
@@ -29,7 +29,7 @@ getBasis <- function(x, name = "NMF") {
 #' @return Matrix with cells x factors (coefficient matrix, same as reducedDim)
 #' @export
 #' @examples
-#' # sce <- runNMF(sce, k = 10)
+#' # sce <- runBiocNMF(sce, k = 10)
 #' # coeffs <- getCoefficients(sce)
 getCoefficients <- function(x, name = "NMF") {
     if (!is(x, "SingleCellExperiment")) {
@@ -37,7 +37,7 @@ getCoefficients <- function(x, name = "NMF") {
     }
     
     if (!name %in% reducedDimNames(x)) {
-        stop("reducedDim '", name, "' not found. Run runNMF() first.")
+        stop("reducedDim '", name, "' not found. Run runBiocNMF() first.")
     }
     
     return(reducedDim(x, name))
@@ -52,7 +52,7 @@ getCoefficients <- function(x, name = "NMF") {
 #' @return List of character vectors, each containing top features for a factor
 #' @export
 #' @examples
-#' # sce <- runNMF(sce, k = 10)
+#' # sce <- runBiocNMF(sce, k = 10)
 #' # top_genes <- getTopFeatures(sce, n = 20)
 getTopFeatures <- function(x, name = "NMF", n = 10) {
     basis <- getBasis(x, name)
@@ -86,7 +86,7 @@ getTopFeatures <- function(x, name = "NMF", n = 10) {
 #' @return Reconstructed matrix (basis %*% t(coefficients))
 #' @export
 #' @examples
-#' # sce <- runNMF(sce, k = 10)
+#' # sce <- runBiocNMF(sce, k = 10)
 #' # reconstructed <- reconstructNMF(sce)
 reconstructNMF <- function(x, name = "NMF") {
     basis <- getBasis(x, name)

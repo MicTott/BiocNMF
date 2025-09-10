@@ -11,7 +11,7 @@ importFrom(utils, packageDescription)
 importFrom(parallel, mclapply)
 importFrom(Matrix, Matrix)
 
-export(runNMF)
+export(runBiocNMF)
 export(getBasis)
 export(getCoefficients)
 export(getTopFeatures)
