@@ -136,8 +136,7 @@ go_results <- runProgramGOEnrichment(
   organism = "mouse",      # Mouse brain data
   n_genes = 50,           # Use top 50 genes per program
   ont = "BP",             # Biological Process ontology
-  pvalueCutoff = 0.05,    # Significance threshold
-  verbose = TRUE
+  pvalue_cutoff = 0.05    # Significance threshold
 )
 
 # Summary of results
