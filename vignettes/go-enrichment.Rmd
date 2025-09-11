@@ -1,0 +1,411 @@
+---
+title: "Gene Set Enrichment Analysis with BiocNMF"
+author: "BiocNMF Development Team"
+date: "`r Sys.Date()`"
+output: 
+  BiocStyle::html_document:
+    toc: true
+    toc_float: true
+    fig_width: 10
+    fig_height: 8
+vignette: >
+  %\VignetteIndexEntry{Gene Set Enrichment Analysis with BiocNMF}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "figures/go-enrichment-",
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+# Introduction
+
+Gene set enrichment analysis is a powerful approach to interpret the biological meaning of gene expression programs identified by Non-negative Matrix Factorization (NMF). This vignette demonstrates how to perform and visualize Gene Ontology (GO) enrichment analysis using BiocNMF's integrated workflow.
+
+We'll use the Zeisel brain dataset, which contains diverse brain cell types with distinct molecular signatures - perfect for demonstrating how NMF programs capture biologically meaningful gene expression patterns.
+
+## Key Features
+
+- **Automated GO enrichment** for NMF programs
+- **Publication-ready visualizations** with multiple plot types  
+- **Multi-program comparisons** to identify program-specific functions
+- **Flexible organism support** (mouse, human, rat, etc.)
+- **Integration with clusterProfiler** ecosystem
+
+# Setup and Data Preparation
+
+```{r libraries}
+library(BiocNMF)
+library(scRNAseq)
+library(scuttle)
+library(scater)
+library(scran)
+library(ggplot2)
+library(patchwork)
+
+# For GO enrichment (install if needed)
+# BiocManager::install(c("clusterProfiler", "org.Mm.eg.db"))
+library(clusterProfiler)
+library(org.Mm.eg.db)
+```
+
+## Load and Process Brain Data
+
+```{r load-data}
+# Load the Zeisel mouse brain dataset
+sce <- ZeiselBrainData()
+
+cat("Original dataset:", nrow(sce), "genes,", ncol(sce), "cells\n")
+cat("Brain cell types:", length(unique(sce$level1class)), "major classes\n")
+
+# Show the brain cell type distribution
+table(sce$level1class)
+```
+
+```{r preprocess}
+# Quality control and preprocessing
+sce <- addPerCellQCMetrics(sce)
+sce <- addPerFeatureQCMetrics(sce)
+
+# Filter for quality and computational efficiency
+sce <- sce[rowData(sce)$detected >= 10, ]  # Keep genes detected in >=10 cells
+sce <- sce[, colData(sce)$detected >= 500]  # Keep cells with >=500 detected genes
+
+# Subset for faster analysis (optional)
+set.seed(42)
+if (ncol(sce) > 1200) {
+  cell_subset <- sample(ncol(sce), 1200)
+  sce <- sce[, cell_subset]
+  cat("Randomly subsetted to 1200 cells for computational efficiency\n")
+}
+
+# Normalize
+sce <- logNormCounts(sce)
+
+# Select highly variable genes for focused analysis
+dec <- modelGeneVar(sce)
+top_hvgs <- getTopHVGs(dec, n = 1000)  # Focus on top variable genes
+sce <- sce[top_hvgs, ]
+
+cat("Processed dataset:", nrow(sce), "genes,", ncol(sce), "cells\n")
+```
+
+# NMF Analysis
+
+```{r nmf}
+# Run NMF to identify gene expression programs
+sce <- runBiocNMF(sce, k = 8, verbose = FALSE)
+
+# Add UMAP for visualization
+sce <- runPCA(sce, ncomponents = 50)
+sce <- runUMAP(sce, dimred = "PCA")
+
+cat("NMF completed: identified", ncol(getBasis(sce)), "gene expression programs\n")
+```
+
+Let's visualize the programs in UMAP space to see their spatial organization:
+
+```{r umap-programs, fig.width=12, fig.height=8}
+# Visualize programs in UMAP space
+program_plots <- list()
+for (i in 1:4) {  # Show first 4 programs
+  program_plots[[i]] <- vizUMAP(sce, program = i, 
+                               title = paste("Program", i))
+}
+
+# Combine plots
+(program_plots[[1]] + program_plots[[2]]) / 
+(program_plots[[3]] + program_plots[[4]])
+```
+
+# GO Enrichment Analysis
+
+Now we'll perform GO enrichment analysis to understand the biological functions associated with each gene expression program.
+
+```{r go-enrichment}
+# Run GO enrichment analysis for all programs
+cat("Running GO enrichment analysis...\n")
+go_results <- runProgramGOEnrichment(
+  sce, 
+  organism = "mouse",      # Mouse brain data
+  n_genes = 50,           # Use top 50 genes per program
+  ont = "BP",             # Biological Process ontology
+  pvalueCutoff = 0.05,    # Significance threshold
+  verbose = TRUE
+)
+
+# Summary of results
+cat("GO Enrichment Results:\n")
+cat("Programs with significant GO terms:", length(go_results), "\n")
+
+for (i in seq_along(go_results)) {
+  program_name <- names(go_results)[i]
+  n_terms <- nrow(go_results[[program_name]])
+  cat("-", program_name, ":", n_terms, "significant GO terms\n")
+}
+```
+
+Let's examine the top GO terms for each program:
+
+```{r examine-results}
+# Show top GO terms for each program
+for (i in 1:min(4, length(go_results))) {
+  program_name <- names(go_results)[i]
+  go_result <- go_results[[program_name]]
+  
+  if (nrow(go_result) > 0) {
+    cat("\n=== Top GO terms for", program_name, "===\n")
+    
+    # Convert to data.frame if needed and show top terms
+    if (inherits(go_result, "enrichResult")) {
+      go_df <- as.data.frame(go_result)
+    } else {
+      go_df <- go_result
+    }
+    
+    top_terms <- head(go_df[, c("Description", "pvalue", "p.adjust", "Count")], 6)
+    print(top_terms)
+  }
+}
+```
+
+# Visualization of GO Enrichment
+
+BiocNMF provides several visualization functions to explore GO enrichment results.
+
+## Bar Charts
+
+Bar charts show the most significantly enriched terms with clear ranking:
+
+```{r bar-charts, fig.width=12, fig.height=8}
+# Create bar charts for the first two programs
+if (length(go_results) >= 2) {
+  program1_name <- names(go_results)[1]
+  program2_name <- names(go_results)[2]
+  
+  p1 <- plotGOBarChart(go_results[[program1_name]], 
+                      n_terms = 10,
+                      title = paste(program1_name, "- Top GO Terms"))
+  
+  p2 <- plotGOBarChart(go_results[[program2_name]], 
+                      n_terms = 10,
+                      title = paste(program2_name, "- Top GO Terms"))
+  
+  # Show side by side
+  p1 + p2
+} else if (length(go_results) == 1) {
+  plotGOBarChart(go_results[[1]], n_terms = 12,
+                title = paste(names(go_results)[1], "- GO Enrichment"))
+}
+```
+
+## Dot Plots
+
+Dot plots encode both significance and gene count information:
+
+```{r dot-plots, fig.width=12, fig.height=8}
+# Create dot plots with size representing gene count
+if (length(go_results) >= 2) {
+  p1_dot <- plotGODotPlot(go_results[[program1_name]], 
+                         n_terms = 15,
+                         title = paste(program1_name, "- GO Overview"))
+  
+  p2_dot <- plotGODotPlot(go_results[[program2_name]], 
+                         n_terms = 15,
+                         title = paste(program2_name, "- GO Overview"))
+  
+  p1_dot + p2_dot
+} else if (length(go_results) == 1) {
+  plotGODotPlot(go_results[[1]], n_terms = 15,
+               title = paste(names(go_results)[1], "- GO Overview"))
+}
+```
+
+## Multi-Program Comparison
+
+Compare GO terms across all programs to identify program-specific functions:
+
+```{r comparison-plot, fig.width=14, fig.height=10}
+# Multi-program comparison
+if (length(go_results) > 1) {
+  comparison_plot <- plotMultipleProgramsGO(go_results, 
+                                           n_terms = 6,  # Top 6 terms per program
+                                           ncol = 2)     # 2 columns layout
+  comparison_plot
+}
+```
+
+## Alternative Visualizations
+
+### Different Color Schemes
+
+```{r color-schemes, fig.width=12, fig.height=6}
+if (length(go_results) >= 1) {
+  program_name <- names(go_results)[1]
+  
+  # Color by gene count instead of p-value
+  p_count <- plotGOBarChart(go_results[[program_name]], 
+                           n_terms = 8,
+                           color_by = "Count",
+                           title = "Colored by Gene Count")
+  
+  # Standard p-value coloring
+  p_pval <- plotGOBarChart(go_results[[program_name]], 
+                          n_terms = 8,
+                          color_by = "p.adjust", 
+                          title = "Colored by P-value")
+  
+  p_count + p_pval
+}
+```
+
+# Biological Interpretation
+
+The GO enrichment results reveal the biological functions of each NMF program:
+
+## Brain-Specific Patterns
+
+Let's look for brain-specific GO terms and markers in our results:
+
+```{r brain-interpretation}
+# Look for brain-related GO terms
+brain_keywords <- c("neuron", "axon", "dendrite", "synapse", "myelination", 
+                   "oligodendrocyte", "astrocyte", "microglia", "neural")
+
+# Search for brain-related terms in each program
+for (i in seq_along(go_results)) {
+  program_name <- names(go_results)[i]
+  go_result <- go_results[[program_name]]
+  
+  if (nrow(go_result) > 0) {
+    # Convert to data.frame if needed
+    if (inherits(go_result, "enrichResult")) {
+      go_df <- as.data.frame(go_result)
+    } else {
+      go_df <- go_result
+    }
+    
+    # Find brain-related terms
+    brain_terms <- go_df[grepl(paste(brain_keywords, collapse = "|"), 
+                              go_df$Description, ignore.case = TRUE), ]
+    
+    if (nrow(brain_terms) > 0) {
+      cat("\n=== Brain-related GO terms in", program_name, "===\n")
+      cat("Found", nrow(brain_terms), "brain-related terms:\n")
+      print(head(brain_terms[, c("Description", "p.adjust", "Count")], 4))
+    }
+  }
+}
+```
+
+## Program Characterization
+
+Based on the top genes and GO terms, we can characterize each program:
+
+```{r program-characterization}
+# Get top genes for each program to aid interpretation
+top_genes_list <- getTopFeatures(sce, n = 10)
+
+for (i in 1:min(4, length(top_genes_list))) {
+  program_name <- names(top_genes_list)[i]
+  cat("\n=== Program", i, "Characterization ===\n")
+  cat("Top genes:", paste(head(top_genes_list[[program_name]], 8), collapse = ", "), "\n")
+  
+  # Show top GO term
+  if (program_name %in% names(go_results)) {
+    go_result <- go_results[[program_name]]
+    if (nrow(go_result) > 0) {
+      if (inherits(go_result, "enrichResult")) {
+        top_go <- as.data.frame(go_result)[1, "Description"]
+      } else {
+        top_go <- go_result[1, "Description"]
+      }
+      cat("Top GO term:", top_go, "\n")
+    }
+  }
+}
+```
+
+# Saving Results
+
+```{r save-results}
+# Save comprehensive plots to PDF
+saveGOPlotsToPDF(go_results, 
+                filename = "brain_nmf_go_enrichment.pdf",
+                width = 14, height = 10)
+
+# Save results for later analysis
+save(go_results, sce, file = "brain_nmf_enrichment_analysis.RData")
+
+cat("Results saved to brain_nmf_go_enrichment.pdf and brain_nmf_enrichment_analysis.RData\n")
+```
+
+# Advanced Analysis
+
+## Custom Gene Sets
+
+You can also perform enrichment with custom gene sets:
+
+```{r custom-genesets, eval=FALSE}
+# Example: Create custom brain cell type markers (not run)
+custom_gene_sets <- list(
+  "Oligodendrocyte_markers" = c("Mbp", "Plp1", "Mog", "Cnp"),
+  "Astrocyte_markers" = c("Gfap", "Aldh1l1", "Aqp4", "Slc1a3"),
+  "Neuron_markers" = c("Rbfox3", "Tubb3", "Map2", "Syn1")
+)
+
+# Use prepareProgramGeneSets to create gene sets for enrichment
+program_gene_sets <- prepareProgramGeneSets(sce, n_genes = 30)
+```
+
+## Network Visualization
+
+For programs with many GO terms, network plots can show term relationships:
+
+```{r network-plot, eval=FALSE}
+# Network visualization (requires enrichplot package)
+if (requireNamespace("enrichplot", quietly = TRUE) && length(go_results) > 0) {
+  # This works best with full enrichResult objects
+  program_with_most_terms <- which.max(sapply(go_results, nrow))
+  if (inherits(go_results[[program_with_most_terms]], "enrichResult")) {
+    network_plot <- plotGONetwork(go_results[[program_with_most_terms]], 
+                                 n_terms = 20,
+                                 title = "GO Terms Network")
+    print(network_plot)
+  }
+}
+```
+
+# Summary
+
+This vignette demonstrated:
+
+1. **NMF analysis** of brain single-cell data to identify gene expression programs
+2. **GO enrichment analysis** to understand program functions
+3. **Multiple visualization approaches** for enrichment results
+4. **Biological interpretation** of brain cell type programs
+5. **Comparison across programs** to identify specific functions
+
+## Key Takeaways
+
+- NMF programs often correspond to cell type-specific expression signatures
+- GO enrichment helps validate and interpret these programs biologically
+- Different visualization approaches highlight different aspects of enrichment
+- Multi-program comparisons reveal program-specific vs shared functions
+
+## Next Steps
+
+- Explore other ontologies (MF, CC) and pathway databases (KEGG, Reactome)
+- Compare enrichment across different experimental conditions
+- Integrate with trajectory analysis or pseudotime
+- Perform cross-species comparisons of program functions
+
+```{r session-info}
+sessionInfo()
+```
