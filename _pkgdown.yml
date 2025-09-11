@@ -72,20 +72,6 @@ reference:
   - plotGEPs
   - plotGEPUsage
 
-- title: Gene Analysis & Enrichment
-  desc: Functions for gene analysis and pathway enrichment
-  contents:
-  - FindAllDEPs
-  - plotDEPsVolcano
-  - plotDEPsDots
-  - plotProgramGenes
-  - prepareProgramGeneSets
-  - runProgramGOEnrichment
-  - plotGOBarChart
-  - plotGODotPlot
-  - plotMultipleProgramsGO
-  - plotGONetwork
-  - saveGOPlotsToPDF
 
 articles:
 - title: Tutorials
