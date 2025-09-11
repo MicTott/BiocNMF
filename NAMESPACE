@@ -13,6 +13,7 @@ importFrom(Matrix, Matrix)
 importFrom(ggplot2, ggplot, aes, geom_point, scale_color_viridis_c, scale_color_gradientn, ggtitle, theme_minimal, labs, xlab, ylab, geom_hline, geom_vline, scale_color_manual, facet_wrap, theme, element_text, scale_size_continuous)
 importFrom(scran, findMarkers)
 importFrom(pheatmap, pheatmap)
+importFrom(AnnotationDbi, mapIds)
 
 export(runBiocNMF)
 export(getBasis)

@@ -216,7 +216,8 @@ prepareProgramGeneSets <- function(x, nmf_name = "NMF", n_genes = 50, min_loadin
 #' Run Gene Ontology enrichment on NMF program gene sets
 #'
 #' Wrapper function for running GO enrichment analysis on top genes from each
-#' NMF program using clusterProfiler (if available).
+#' NMF program using clusterProfiler. Automatically detects and converts gene ID types
+#' (symbols, Ensembl, Entrez) for maximum compatibility.
 #'
 #' @param x A SingleCellExperiment object with NMF results  
 #' @param nmf_name Character, name of NMF result to use (default "NMF")
@@ -225,6 +226,7 @@ prepareProgramGeneSets <- function(x, nmf_name = "NMF", n_genes = 50, min_loadin
 #' @param ont Character, GO ontology: "BP", "MF", "CC", "ALL" (default "BP")
 #' @param pvalue_cutoff Numeric, p-value cutoff for significance (default 0.05)
 #' @param qvalue_cutoff Numeric, q-value cutoff for significance (default 0.1)
+#' @param keyType Character, gene ID type: "auto" (detect), "SYMBOL", "ENSEMBL", "ENTREZID" (default "auto")
 #'
 #' @return List of clusterProfiler enrichResult objects (one per program)
 #' @export
@@ -238,7 +240,8 @@ prepareProgramGeneSets <- function(x, nmf_name = "NMF", n_genes = 50, min_loadin
 #'
 runProgramGOEnrichment <- function(x, nmf_name = "NMF", n_genes = 50,
                                   organism = "human", ont = "BP", 
-                                  pvalue_cutoff = 0.05, qvalue_cutoff = 0.1) {
+                                  pvalue_cutoff = 0.05, qvalue_cutoff = 0.1,
+                                  keyType = "auto") {
     
     # Check if clusterProfiler is available
     if (!requireNamespace("clusterProfiler", quietly = TRUE)) {
@@ -267,6 +270,13 @@ runProgramGOEnrichment <- function(x, nmf_name = "NMF", n_genes = 50,
     gene_sets_data <- prepareProgramGeneSets(x, nmf_name = nmf_name, n_genes = n_genes)
     gene_sets <- gene_sets_data$gene_sets
     
+    # Auto-detect gene ID type if requested
+    if (keyType == "auto") {
+        sample_genes <- head(gene_sets[[1]], 10)  # Use first 10 genes from first program
+        keyType <- detectGeneIDType(sample_genes, orgdb)
+        cat("Detected gene ID type:", keyType, "\n")
+    }
+    
     # Run GO enrichment for each program
     go_results <- list()
     
@@ -274,9 +284,19 @@ runProgramGOEnrichment <- function(x, nmf_name = "NMF", n_genes = 50,
         cat("Running GO enrichment for", program, "...\n")
         
         tryCatch({
+            # Convert gene IDs if necessary
+            converted_genes <- convertGeneIDs(gene_sets[[program]], orgdb, keyType)
+            
+            if (length(converted_genes) == 0) {
+                warning("No genes could be converted for ", program)
+                go_results[[program]] <- NULL
+                next
+            }
+            
             enrichment <- clusterProfiler::enrichGO(
-                gene = gene_sets[[program]],
+                gene = converted_genes,
                 OrgDb = orgdb,
+                keyType = "ENTREZID",  # Always use ENTREZID for enrichGO
                 ont = ont,
                 pAdjustMethod = "BH",
                 pvalueCutoff = pvalue_cutoff,
@@ -302,4 +322,94 @@ runProgramGOEnrichment <- function(x, nmf_name = "NMF", n_genes = 50,
     
     cat("GO enrichment completed for", length(go_results), "programs\n")
     return(go_results)
+}
+
+
+#' Detect gene ID type automatically
+#'
+#' @param genes Character vector of gene identifiers
+#' @param orgdb Character, organism database name
+#' @return Character, detected key type
+#' @keywords internal
+detectGeneIDType <- function(genes, orgdb) {
+    
+    # Remove any NA or empty values
+    genes <- genes[!is.na(genes) & nzchar(genes)]
+    if (length(genes) == 0) return("SYMBOL")
+    
+    # Check for Ensembl IDs (start with ENS)
+    if (any(grepl("^ENS", genes))) {
+        return("ENSEMBL")
+    }
+    
+    # Check for Entrez IDs (all numeric)
+    if (all(grepl("^[0-9]+$", genes))) {
+        return("ENTREZID")
+    }
+    
+    # Check if they look like gene symbols (letters/numbers, reasonable length)
+    if (all(grepl("^[A-Za-z0-9._-]+$", genes)) && all(nchar(genes) <= 15)) {
+        return("SYMBOL")
+    }
+    
+    # Default to SYMBOL
+    return("SYMBOL")
+}
+
+
+#' Convert gene IDs to Entrez IDs
+#'
+#' @param genes Character vector of gene identifiers  
+#' @param orgdb Character, organism database name
+#' @param from_type Character, source ID type
+#' @return Character vector of Entrez IDs
+#' @keywords internal
+convertGeneIDs <- function(genes, orgdb, from_type) {
+    
+    # Remove any NA or empty values
+    genes <- genes[!is.na(genes) & nzchar(genes)]
+    if (length(genes) == 0) return(character(0))
+    
+    # If already ENTREZID, just return (but ensure they're character)
+    if (from_type == "ENTREZID") {
+        return(as.character(genes))
+    }
+    
+    # Load the appropriate organism database
+    if (!requireNamespace("AnnotationDbi", quietly = TRUE)) {
+        warning("AnnotationDbi package required for gene ID conversion")
+        return(character(0))
+    }
+    
+    tryCatch({
+        # Get the organism database object
+        if (orgdb == "org.Hs.eg.db") {
+            org_db <- org.Hs.eg.db::org.Hs.eg.db
+        } else if (orgdb == "org.Mm.eg.db") {
+            org_db <- org.Mm.eg.db::org.Mm.eg.db
+        } else {
+            stop("Unsupported organism database: ", orgdb)
+        }
+        
+        # Convert to Entrez IDs
+        converted <- AnnotationDbi::mapIds(
+            org_db,
+            keys = genes,
+            column = "ENTREZID", 
+            keytype = from_type,
+            multiVals = "first"  # Take first match if multiple
+        )
+        
+        # Remove NAs and return unique values
+        converted <- converted[!is.na(converted)]
+        converted <- unique(as.character(converted))
+        
+        cat("  Converted", length(genes), "genes to", length(converted), "Entrez IDs\n")
+        
+        return(converted)
+        
+    }, error = function(e) {
+        warning("Gene ID conversion failed: ", e$message)
+        return(character(0))
+    })
 }
