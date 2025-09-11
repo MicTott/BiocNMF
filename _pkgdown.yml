@@ -26,6 +26,8 @@ navbar:
         href: articles/getting-started.html
       - text: Consensus NMF
         href: articles/consensus-nmf.html
+      - text: GO Enrichment Analysis
+        href: articles/go-enrichment.html
     news:
       text: Changelog
       href: news/index.html
@@ -70,12 +72,28 @@ reference:
   - plotGEPs
   - plotGEPUsage
 
+- title: Gene Analysis & Enrichment
+  desc: Functions for gene analysis and pathway enrichment
+  contents:
+  - FindAllDEPs
+  - plotDEPsVolcano
+  - plotDEPsDots
+  - plotProgramGenes
+  - prepareProgramGeneSets
+  - runProgramGOEnrichment
+  - plotGOBarChart
+  - plotGODotPlot
+  - plotMultipleProgramsGO
+  - plotGONetwork
+  - saveGOPlotsToPDF
+
 articles:
 - title: Tutorials
   navbar: ~
   contents:
   - getting-started
   - consensus-nmf
+  - go-enrichment
 
 authors:
   Michael Totty:
