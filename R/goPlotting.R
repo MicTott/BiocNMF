@@ -21,14 +21,19 @@ plotGOBarChart <- function(go_result, n_terms = 10, title = NULL, color_by = "p.
     stop("dplyr package required for data manipulation")
   }
   
+  # Convert enrichResult to data.frame if needed
+  if (inherits(go_result, "enrichResult")) {
+    go_result <- as.data.frame(go_result)
+  }
+  
   if (nrow(go_result) == 0) {
     stop("No GO terms found in results")
   }
   
-  # Prepare data
+  # Prepare data using head() instead of slice_head() for compatibility
   plot_data <- go_result %>%
     dplyr::arrange(p.adjust) %>%
-    dplyr::slice_head(n = n_terms) %>%
+    utils::head(n = n_terms) %>%
     dplyr::mutate(
       Description = factor(Description, levels = rev(Description)),
       neg_log_pval = -log10(p.adjust)
@@ -75,14 +80,19 @@ plotGODotPlot <- function(go_result, n_terms = 15, title = NULL) {
     stop("scales package required for formatting")
   }
   
+  # Convert enrichResult to data.frame if needed
+  if (inherits(go_result, "enrichResult")) {
+    go_result <- as.data.frame(go_result)
+  }
+  
   if (nrow(go_result) == 0) {
     stop("No GO terms found in results")
   }
   
-  # Prepare data
+  # Prepare data using head() instead of slice_head() for compatibility
   plot_data <- go_result %>%
     dplyr::arrange(p.adjust) %>%
-    dplyr::slice_head(n = n_terms) %>%
+    utils::head(n = n_terms) %>%
     dplyr::mutate(
       Description = factor(Description, levels = rev(Description)),
       neg_log_pval = -log10(p.adjust)
@@ -135,13 +145,18 @@ plotMultipleProgramsGO <- function(go_results_list, n_terms = 5, ncol = 2) {
   combined_data <- purrr::map_dfr(names(go_results_list), function(program_name) {
     go_result <- go_results_list[[program_name]]
     
+    # Convert enrichResult to data.frame if needed
+    if (inherits(go_result, "enrichResult")) {
+      go_result <- as.data.frame(go_result)
+    }
+    
     if (nrow(go_result) == 0) {
       return(data.frame())
     }
     
     go_result %>%
       dplyr::arrange(p.adjust) %>%
-      dplyr::slice_head(n = n_terms) %>%
+      utils::head(n = n_terms) %>%
       dplyr::mutate(
         Program = program_name,
         neg_log_pval = -log10(p.adjust)
@@ -187,12 +202,15 @@ plotGONetwork <- function(go_result, n_terms = 20, title = NULL) {
     stop("enrichplot package required for network plots. Install with: BiocManager::install('enrichplot')")
   }
   
-  if (nrow(go_result) == 0) {
-    stop("No GO terms found in results")
-  }
-  
-  # Convert to enrichResult object if needed
-  if (!inherits(go_result, "enrichResult")) {
+  # Handle both enrichResult objects and data.frames
+  if (inherits(go_result, "enrichResult")) {
+    if (nrow(go_result@result) == 0) {
+      stop("No GO terms found in results")
+    }
+  } else {
+    if (nrow(go_result) == 0) {
+      stop("No GO terms found in results")
+    }
     # This is a simplified conversion - in practice you might need the full enrichResult object
     message("Note: Network plot works best with full enrichResult objects from clusterProfiler")
   }
@@ -225,6 +243,11 @@ saveGOPlotsToPDF <- function(go_results_list, filename = "go_enrichment_plots.pd
   # Plot for each program
   for (program_name in names(go_results_list)) {
     go_result <- go_results_list[[program_name]]
+    
+    # Convert enrichResult to data.frame if needed
+    if (inherits(go_result, "enrichResult")) {
+      go_result <- as.data.frame(go_result)
+    }
     
     if (nrow(go_result) == 0) {
       cat("No GO terms for", program_name, "- skipping\n")
