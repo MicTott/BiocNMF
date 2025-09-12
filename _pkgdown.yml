@@ -72,6 +72,21 @@ reference:
   - plotGEPs
   - plotGEPUsage
 
+- title: GO Enrichment Analysis
+  desc: Gene Ontology enrichment and visualization functions
+  contents:
+  - FindAllDEPs
+  - runProgramGOEnrichment
+  - prepareProgramGeneSets
+  - plotGOBarChart
+  - plotGODotPlot
+  - plotGONetwork
+  - plotDEPsDots
+  - plotDEPsVolcano
+  - plotProgramGenes
+  - plotMultipleProgramsGO
+  - saveGOPlotsToPDF
+
 
 articles:
 - title: Tutorials

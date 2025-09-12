@@ -14,7 +14,7 @@ NMFscape provides high-performance non-negative matrix factorization (NMF) metho
 ## Features
 
 ### Standard NMF
-- `runNMF()` - Fast NMF using RcppML backend
+- `runNMFscape()` - Fast NMF using RcppML backend
 - Results stored in `reducedDims()` with basis in `metadata()`
 
 ### Consensus NMF (cNMF)
@@ -58,7 +58,7 @@ sce <- mockSCE(ngenes = 1000, ncells = 500)
 sce <- logNormCounts(sce)
 
 # Standard NMF
-sce <- runNMF(sce, k = 10)
+sce <- runNMFscape(sce, k = 10)
 nmf_coords <- reducedDim(sce, "NMF")
 
 # Consensus NMF for robust gene expression programs
