@@ -15,7 +15,7 @@
 #' @return A pheatmap object
 #' @export
 #' @examples
-#' sce <- runBiocNMF(sce, k = 8)
+#' sce <- runNMFscape(sce, k = 8)
 #' plotProgramGenes(sce, "cell_type", n_genes = 8, max_genes = 40)
 #'
 #' @importFrom pheatmap pheatmap
@@ -29,7 +29,7 @@ plotProgramGenes <- function(x, cell_type_col, nmf_name = "NMF", n_genes = 5,
     }
     
     if (!nmf_name %in% reducedDimNames(x)) {
-        stop("NMF result '", nmf_name, "' not found. Run runBiocNMF() first.")
+        stop("NMF result '", nmf_name, "' not found. Run runNMFscape() first.")
     }
     
     if (!cell_type_col %in% colnames(colData(x))) {
@@ -152,7 +152,7 @@ plotProgramGenes <- function(x, cell_type_col, nmf_name = "NMF", n_genes = 5,
 #' @return List with gene_sets (named list of gene vectors) and summary table
 #' @export
 #' @examples
-#' sce <- runBiocNMF(sce, k = 8)
+#' sce <- runNMFscape(sce, k = 8)
 #' gene_sets <- prepareProgramGeneSets(sce, n_genes = 100)
 #' # Use with clusterProfiler, fgsea, etc.
 #'
@@ -164,7 +164,7 @@ prepareProgramGeneSets <- function(x, nmf_name = "NMF", n_genes = 50, min_loadin
     }
     
     if (!nmf_name %in% reducedDimNames(x)) {
-        stop("NMF result '", nmf_name, "' not found. Run runBiocNMF() first.")
+        stop("NMF result '", nmf_name, "' not found. Run runNMFscape() first.")
     }
     
     # Get basis matrix and top genes
@@ -232,7 +232,7 @@ prepareProgramGeneSets <- function(x, nmf_name = "NMF", n_genes = 50, min_loadin
 #' @export
 #' @examples  
 #' \dontrun{
-#' sce <- runBiocNMF(sce, k = 8)
+#' sce <- runNMFscape(sce, k = 8)
 #' go_results <- runProgramGOEnrichment(sce, organism = "mouse")
 #' # View results for first program
 #' head(go_results[[1]])

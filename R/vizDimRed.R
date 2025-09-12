@@ -20,7 +20,7 @@
 #' library(scuttle)
 #' sce <- mockSCE()
 #' sce <- logNormCounts(sce)
-#' sce <- runBiocNMF(sce, k = 5)
+#' sce <- runNMFscape(sce, k = 5)
 #' sce <- runUMAP(sce)
 #' 
 #' # Plot NMF program 1 on UMAP
@@ -52,7 +52,7 @@ vizDimRed <- function(x, dimred = "UMAP", nmf_name = "NMF", program = 1,
     
     if (!nmf_name %in% reducedDimNames(x)) {
         stop("NMF result '", nmf_name, "' not found in reducedDims(x). ",
-             "Run runBiocNMF() first.")
+             "Run runNMFscape() first.")
     }
     
     # Get dimension reduction coordinates

@@ -21,6 +21,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started</a></li>
     <li><a class="dropdown-item" href="../articles/consensus-nmf.html">Consensus NMF</a></li>
+    <li><a class="dropdown-item" href="../articles/go-enrichment.html">GO Enrichment Analysis</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -50,10 +51,10 @@
 
       <dl><dt>
 
-          <code><a href="runNMF.html">runNMF()</a></code>
+          <code><a href="runBiocNMF.html">runBiocNMF()</a></code>
 
         </dt>
-        <dd>Run Non-negative Matrix Factorization on SingleCellExperiment objects</dd>
+        <dd>Run BiocNMF Non-negative Matrix Factorization on SingleCellExperiment objects</dd>
       </dl><dl><dt>
 
           <code><a href="runConsensusNMF.html">runConsensusNMF()</a></code>
@@ -161,6 +162,18 @@
 
       <dl><dt>
 
+          <code><a href="vizUMAP.html">vizUMAP()</a></code>
+
+        </dt>
+        <dd>Visualize NMF programs on UMAP coordinates</dd>
+      </dl><dl><dt>
+
+          <code><a href="vizDimRed.html">vizDimRed()</a></code>
+
+        </dt>
+        <dd>Visualize NMF programs on dimension reduction plots</dd>
+      </dl><dl><dt>
+
           <code><a href="plotStability.html">plotStability()</a></code>
 
         </dt>
@@ -183,6 +196,83 @@
 
         </dt>
         <dd>Plot GEP usage in reduced dimension space</dd>
+      </dl></div><div class="section level2">
+      <h2 id="gene-analysis-enrichment">Gene Analysis &amp; Enrichment<a class="anchor" aria-label="anchor" href="#gene-analysis-enrichment"></a></h2>
+
+      <div class="section-desc"><p>Functions for gene analysis and pathway enrichment</p></div>
+
+
+    </div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="FindAllDEPs.html">FindAllDEPs()</a></code>
+
+        </dt>
+        <dd>Find All Differentially Expressed Programs (1-vs-all analysis)</dd>
+      </dl><dl><dt>
+
+          <code><a href="plotDEPsVolcano.html">plotDEPsVolcano()</a></code>
+
+        </dt>
+        <dd>Visualize Differentially Expressed Programs with volcano plots</dd>
+      </dl><dl><dt>
+
+          <code><a href="plotDEPsDots.html">plotDEPsDots()</a></code>
+
+        </dt>
+        <dd>Visualize Differentially Expressed Programs with dot plot</dd>
+      </dl><dl><dt>
+
+          <code><a href="plotProgramGenes.html">plotProgramGenes()</a></code>
+
+        </dt>
+        <dd>Visualize top genes per NMF program with heatmap</dd>
+      </dl><dl><dt>
+
+          <code><a href="prepareProgramGeneSets.html">prepareProgramGeneSets()</a></code>
+
+        </dt>
+        <dd>Prepare gene sets for enrichment analysis from NMF programs</dd>
+      </dl><dl><dt>
+
+          <code><a href="runProgramGOEnrichment.html">runProgramGOEnrichment()</a></code>
+
+        </dt>
+        <dd>Run Gene Ontology enrichment on NMF program gene sets</dd>
+      </dl><dl><dt>
+
+          <code><a href="plotGOBarChart.html">plotGOBarChart()</a></code>
+
+        </dt>
+        <dd>Plot GO Enrichment Bar Chart</dd>
+      </dl><dl><dt>
+
+          <code><a href="plotGODotPlot.html">plotGODotPlot()</a></code>
+
+        </dt>
+        <dd>Plot GO Enrichment Dot Plot</dd>
+      </dl><dl><dt>
+
+          <code><a href="plotMultipleProgramsGO.html">plotMultipleProgramsGO()</a></code>
+
+        </dt>
+        <dd>Plot Multiple Programs GO Comparison</dd>
+      </dl><dl><dt>
+
+          <code><a href="plotGONetwork.html">plotGONetwork()</a></code>
+
+        </dt>
+        <dd>Plot GO Network</dd>
+      </dl><dl><dt>
+
+          <code><a href="saveGOPlotsToPDF.html">saveGOPlotsToPDF()</a></code>
+
+        </dt>
+        <dd>Save GO Plots to PDF</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

@@ -110,8 +110,11 @@ refitting</li>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">SingleCellExperiment</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">scuttle</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://bioconductor.org/packages/scater/" class="external-link">scater</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/MarioniLab/scran/" class="external-link">scran</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">pheatmap</span><span class="op">)</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">pheatmap</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">scRNAseq</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -209,35 +212,102 @@ key components:</p>
 <h3 id="basic-usage">Basic Usage<a class="anchor" aria-label="anchor" href="#basic-usage"></a>
 </h3>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Create example data with more structure for demonstration</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/scuttle/man/mockSCE.html" class="external-link">mockSCE</a></span><span class="op">(</span>ngenes <span class="op">=</span> <span class="fl">1000</span>, ncells <span class="op">=</span> <span class="fl">800</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Load the Zeisel brain dataset - perfect for demonstrating cNMF</span></span>
+<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/scRNAseq/man/ZeiselBrainData.html" class="external-link">ZeiselBrainData</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Add cell type structure</span></span>
-<span><span class="va">n_types</span> <span class="op">&lt;-</span> <span class="fl">5</span></span>
-<span><span class="va">sce</span><span class="op">$</span><span class="va">cell_type</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Type"</span>, <span class="fl">1</span><span class="op">:</span><span class="va">n_types</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co"># The dataset contains multiple brain cell types with distinct expression programs</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Original dataset:"</span>, <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span>, <span class="st">"genes,"</span>, <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span>, <span class="st">"cells\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Original dataset: 20006 genes, 3005 cells</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Brain cell types:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">sce</span><span class="op">$</span><span class="va">level1class</span><span class="op">)</span><span class="op">)</span>, <span class="st">"major classes\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Brain cell types: 7 major classes</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Cell subtypes:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">sce</span><span class="op">$</span><span class="va">level2class</span><span class="op">)</span><span class="op">)</span>, <span class="st">"detailed subtypes\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Cell subtypes: 48 detailed subtypes</span></span>
+<span></span>
+<span><span class="co"># Quality control and preprocessing</span></span>
+<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/scuttle/man/addPerCellQCMetrics.html" class="external-link">addPerCellQCMetrics</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
+<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/scuttle/man/addPerCellQCMetrics.html" class="external-link">addPerFeatureQCMetrics</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Filter for quality and computational efficiency</span></span>
+<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="va">sce</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">rowData</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span><span class="op">$</span><span class="va">detected</span> <span class="op">&gt;=</span> <span class="fl">10</span>, <span class="op">]</span>  <span class="co"># Keep genes detected in &gt;=10 cells</span></span>
+<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="va">sce</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">colData</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span><span class="op">$</span><span class="va">detected</span> <span class="op">&gt;=</span> <span class="fl">500</span><span class="op">]</span>  <span class="co"># Keep cells with &gt;=500 detected genes</span></span>
+<span></span>
+<span><span class="co"># Randomly subset to 1000 cells for faster consensus NMF</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span>  <span class="co"># For reproducibility</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">1000</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">cell_subset</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span>, <span class="fl">1000</span><span class="op">)</span></span>
+<span>  <span class="va">sce</span> <span class="op">&lt;-</span> <span class="va">sce</span><span class="op">[</span>, <span class="va">cell_subset</span><span class="op">]</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Randomly subsetted to 1000 cells for computational efficiency\n"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co">#&gt; Randomly subsetted to 1000 cells for computational efficiency</span></span>
 <span></span>
 <span><span class="co"># Normalize</span></span>
 <span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/scuttle/man/logNormCounts.html" class="external-link">logNormCounts</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Select only 500 highly variable genes for much faster cNMF analysis</span></span>
+<span><span class="va">dec</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/scran/man/modelGeneVar.html" class="external-link">modelGeneVar</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
+<span><span class="va">total_genes_before_hvg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
+<span><span class="va">top_hvgs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/scran/man/getTopHVGs.html" class="external-link">getTopHVGs</a></span><span class="op">(</span><span class="va">dec</span>, n <span class="op">=</span> <span class="fl">500</span><span class="op">)</span>  <span class="co"># Small subset for fast consensus NMF</span></span>
+<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="va">sce</span><span class="op">[</span><span class="va">top_hvgs</span>, <span class="op">]</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Gene selection: reduced from"</span>, <span class="va">total_genes_before_hvg</span>, <span class="st">"to"</span>, <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span>, <span class="st">"highly variable genes\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Gene selection: reduced from 9715 to 500 highly variable genes</span></span>
+<span></span>
 <span><span class="co"># Add visualization coordinates</span></span>
-<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocSingular/man/runPCA.html" class="external-link">runPCA</a></span><span class="op">(</span><span class="va">sce</span>, ncomponents <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
-<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/scater/man/runUMAP.html" class="external-link">runUMAP</a></span><span class="op">(</span><span class="va">sce</span>, dimred <span class="op">=</span> <span class="st">"PCA"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocSingular/man/runPCA.html" class="external-link">runPCA</a></span><span class="op">(</span><span class="va">sce</span>, ncomponents <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
+<span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/scater/man/runUMAP.html" class="external-link">runUMAP</a></span><span class="op">(</span><span class="va">sce</span>, dimred <span class="op">=</span> <span class="st">"PCA"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Processed dataset:"</span>, <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span>, <span class="st">"genes,"</span>, <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span>, <span class="st">"cells\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Processed dataset: 500 genes, 1000 cells</span></span>
+<span></span>
+<span><span class="co"># Show the brain cell type distribution</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">sce</span><span class="op">$</span><span class="va">level1class</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; astrocytes_ependymal    endothelial-mural         interneurons </span></span>
+<span><span class="co">#&gt;                   76                   75                  102 </span></span>
+<span><span class="co">#&gt;            microglia     oligodendrocytes        pyramidal CA1 </span></span>
+<span><span class="co">#&gt;                   26                  278                  315 </span></span>
+<span><span class="co">#&gt;         pyramidal SS </span></span>
+<span><span class="co">#&gt;                  128</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Run consensus NMF</span></span>
-<span><span class="co"># Note: Using small parameters for vignette speed</span></span>
-<span><span class="co"># In practice, use n_runs = 100-200 and broader k_range</span></span>
+<code class="sourceCode R"><span><span class="co"># Run consensus NMF on brain data subset</span></span>
+<span><span class="co"># Note: This requires further debugging for optimal parameters with real brain data</span></span>
+<span><span class="co"># For production use:</span></span>
 <span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/runConsensusNMF.html">runConsensusNMF</a></span><span class="op">(</span><span class="va">sce</span>, </span>
-<span>                       k_range <span class="op">=</span> <span class="fl">4</span><span class="op">:</span><span class="fl">8</span>,           <span class="co"># Test k values</span></span>
-<span>                       n_runs <span class="op">=</span> <span class="fl">20</span>,             <span class="co"># Number of runs per k</span></span>
-<span>                       n_cores <span class="op">=</span> <span class="fl">1</span>,             <span class="co"># Parallel cores</span></span>
+<span>                       k_range <span class="op">=</span> <span class="fl">4</span><span class="op">:</span><span class="fl">8</span>,           <span class="co"># Range for brain cell types</span></span>
+<span>                       n_runs <span class="op">=</span> <span class="fl">100</span>,            <span class="co"># Sufficient runs for stability</span></span>
+<span>                       n_cores <span class="op">=</span> <span class="fl">4</span>,             <span class="co"># Parallel processing</span></span>
+<span>                       density_threshold <span class="op">=</span> <span class="fl">0.4</span>,  <span class="co"># Standard filtering</span></span>
 <span>                       verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Check what was added</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="fu">metadata</span><span class="op">(</span><span class="va">sce</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "cNMF"</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/reducedDims.html" class="external-link">reducedDimNames</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "PCA"  "UMAP" "cNMF"</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/reducedDims.html" class="external-link">reducedDimNames</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="interpreting-results-for-brain-data">Interpreting Results for Brain Data<a class="anchor" aria-label="anchor" href="#interpreting-results-for-brain-data"></a>
+</h3>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Get optimal k and examine programs</span></span>
+<span><span class="va">optimal_k</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getOptimalK.html">getOptimalK</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Optimal k selected:"</span>, <span class="va">optimal_k</span>, <span class="st">"programs\n"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Get top genes for each program to see brain-relevant signatures</span></span>
+<span><span class="va">top_genes_brain</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getTopGEPFeatures.html">getTopGEPFeatures</a></span><span class="op">(</span><span class="va">sce</span>, n <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Look for brain-specific markers in the programs</span></span>
+<span><span class="va">brain_markers</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Gad1"</span>, <span class="st">"Gad2"</span>, <span class="st">"Slc17a7"</span>, <span class="st">"Slc17a6"</span>, <span class="st">"Mbp"</span>, <span class="st">"Pdgfra"</span>, </span>
+<span>                   <span class="st">"Cx3cr1"</span>, <span class="st">"Aldh1l1"</span>, <span class="st">"Pecam1"</span>, <span class="st">"Slc1a3"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fl">4</span>, <span class="va">optimal_k</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nProgram"</span>, <span class="va">i</span>, <span class="st">"top genes:\n"</span><span class="op">)</span></span>
+<span>  <span class="va">program_genes</span> <span class="op">&lt;-</span> <span class="va">top_genes_brain</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span></span>
+<span>  <span class="co"># Highlight known brain markers</span></span>
+<span>  <span class="va">brain_hits</span> <span class="op">&lt;-</span> <span class="va">program_genes</span><span class="op">[</span><span class="va">program_genes</span> <span class="op"><a href="https://rdrr.io/pkg/BiocGenerics/man/match.html" class="external-link">%in%</a></span> <span class="va">brain_markers</span><span class="op">]</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">brain_hits</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  Brain markers found:"</span>, <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">brain_hits</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  All top genes:"</span>, <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">program_genes</span>, <span class="fl">8</span><span class="op">)</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="parameter-selection">Parameter Selection<a class="anchor" aria-label="anchor" href="#parameter-selection"></a>
@@ -248,14 +318,14 @@ key components:</p>
 <p><strong>k_range</strong>: Range of k values to test - Start with
 biologically expected range - Consider 2-3x expected number of cell
 types - Broader ranges provide better stability assessment</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># For 5 expected cell types, test:</span></span>
 <span><span class="va">k_range</span> <span class="op">=</span> <span class="fl">3</span><span class="op">:</span><span class="fl">12</span>    <span class="co"># Conservative range</span></span>
 <span><span class="va">k_range</span> <span class="op">=</span> <span class="fl">2</span><span class="op">:</span><span class="fl">15</span>    <span class="co"># Broader exploration</span></span></code></pre></div>
 <p><strong>n_runs</strong>: Number of NMF runs per k value - More runs =
 better stability estimates - Minimum: 50 runs for reasonable estimates -
 Recommended: 100-200 runs for publication quality</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n_runs</span> <span class="op">=</span> <span class="fl">50</span>      <span class="co"># Quick exploration</span></span>
 <span><span class="va">n_runs</span> <span class="op">=</span> <span class="fl">100</span>     <span class="co"># Standard analysis  </span></span>
 <span><span class="va">n_runs</span> <span class="op">=</span> <span class="fl">200</span>     <span class="co"># High confidence</span></span></code></pre></div>
@@ -268,7 +338,7 @@ Higher values = more aggressive filtering - Range: 0.1 (lenient) to 0.8
 (strict) - Default: 0.5 (balanced)</p>
 <p><strong>n_cores</strong>: Parallel processing - Use available cores -
 1 for system responsiveness - Scales nearly linearly with core count</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/runConsensusNMF.html">runConsensusNMF</a></span><span class="op">(</span><span class="va">sce</span>,</span>
 <span>                       k_range <span class="op">=</span> <span class="fl">5</span><span class="op">:</span><span class="fl">15</span>,</span>
 <span>                       n_runs <span class="op">=</span> <span class="fl">100</span>,</span>
@@ -284,48 +354,37 @@ Higher values = more aggressive filtering - Range: 0.1 (lenient) to 0.8
 <div class="section level3">
 <h3 id="consensus-gene-expression-programs">Consensus Gene Expression Programs<a class="anchor" aria-label="anchor" href="#consensus-gene-expression-programs"></a>
 </h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get consensus gene expression programs</span></span>
 <span><span class="va">consensus_geps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getConsensusGEPs.html">getConsensusGEPs</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">consensus_geps</span><span class="op">)</span>  <span class="co"># genes × programs</span></span>
-<span><span class="co">#&gt; [1] 1000    4</span></span>
 <span></span>
 <span><span class="co"># Get optimal k selected by algorithm</span></span>
 <span><span class="va">optimal_k</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getOptimalK.html">getOptimalK</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Optimal k selected:"</span>, <span class="va">optimal_k</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Optimal k selected: 4</span></span>
 <span></span>
 <span><span class="co"># Get top genes per program</span></span>
 <span><span class="va">top_genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getTopGEPFeatures.html">getTopGEPFeatures</a></span><span class="op">(</span><span class="va">sce</span>, n <span class="op">=</span> <span class="fl">15</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">top_genes</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>  <span class="co"># Top genes for program 1</span></span>
-<span><span class="co">#&gt; [1] "Gene_0273" "Gene_0830" "Gene_0328" "Gene_0792" "Gene_0813" "Gene_0506"</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">top_genes</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>  <span class="co"># Top genes for program 1</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="program-usage">Program Usage<a class="anchor" aria-label="anchor" href="#program-usage"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get program usage per cell</span></span>
 <span><span class="va">gep_usage</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getGEPUsage.html">getGEPUsage</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">gep_usage</span><span class="op">)</span>  <span class="co"># cells × programs</span></span>
-<span><span class="co">#&gt; [1] 800   4</span></span>
 <span></span>
 <span><span class="co"># Usage is also stored in reducedDims</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">gep_usage</span>, <span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/reducedDims.html" class="external-link">reducedDim</a></span><span class="op">(</span><span class="va">sce</span>, <span class="st">"cNMF"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">gep_usage</span>, <span class="fu"><a href="https://rdrr.io/pkg/SingleCellExperiment/man/reducedDims.html" class="external-link">reducedDim</a></span><span class="op">(</span><span class="va">sce</span>, <span class="st">"cNMF"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="stability-metrics">Stability Metrics<a class="anchor" aria-label="anchor" href="#stability-metrics"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get comprehensive stability metrics</span></span>
 <span><span class="va">stability</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getStabilityMetrics.html">getStabilityMetrics</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">stability</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   k    stability silhouette reproducibility cophenetic_correlation</span></span>
-<span><span class="co">#&gt; 1 4 0.0509493671  0.5022110      0.43750000                      1</span></span>
-<span><span class="co">#&gt; 2 5 0.0307070707  0.6056696      0.40000000                      1</span></span>
-<span><span class="co">#&gt; 3 6 0.0004201681  0.2913393      0.06666667                      1</span></span>
-<span><span class="co">#&gt; 4 7 0.0009249743  0.4442262      0.10000000                      1</span></span>
-<span><span class="co">#&gt; 5 8 0.0059748428  0.3627133      0.21250000                      1</span></span>
 <span></span>
 <span><span class="co"># Individual metrics explained:</span></span>
 <span><span class="co"># - stability: clustering-based stability (higher = more stable)</span></span>
@@ -336,19 +395,16 @@ Higher values = more aggressive filtering - Range: 0.1 (lenient) to 0.8
 <div class="section level3">
 <h3 id="accessing-different-k-values">Accessing Different k Values<a class="anchor" aria-label="anchor" href="#accessing-different-k-values"></a>
 </h3>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Access results for specific k values</span></span>
 <span><span class="va">available_k</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getAvailableK.html">getAvailableK</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Available k values:"</span>, <span class="va">available_k</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Available k values: 4 5 6 7 8</span></span>
 <span></span>
 <span><span class="co"># Get results for k=6 specifically</span></span>
 <span><span class="va">geps_k6</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getConsensusGEPs.html">getConsensusGEPs</a></span><span class="op">(</span><span class="va">sce</span>, k <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
 <span><span class="va">usage_k6</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getGEPUsage.html">getGEPUsage</a></span><span class="op">(</span><span class="va">sce</span>, k <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">geps_k6</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 1000    6</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">usage_k6</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 800   6</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">usage_k6</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -359,10 +415,9 @@ Higher values = more aggressive filtering - Range: 0.1 (lenient) to 0.8
 </h3>
 <p>The most important diagnostic is the stability plot for k
 selection:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plot stability metrics across k values</span></span>
 <span><span class="fu"><a href="../reference/plotStability.html">plotStability</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span></code></pre></div>
-<p><img src="consensus-nmf_files/figure-html/plot-stability-1.png" width="960"></p>
 <p><strong>Interpretation</strong>: - <strong>Stability</strong>:
 Primary metric - choose k at peak or plateau -
 <strong>Silhouette</strong>: Quality of consensus clustering -
@@ -375,10 +430,9 @@ correlation</p>
 <div class="section level3">
 <h3 id="gene-expression-program-heatmaps">Gene Expression Program Heatmaps<a class="anchor" aria-label="anchor" href="#gene-expression-program-heatmaps"></a>
 </h3>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plot gene expression programs</span></span>
 <span><span class="fu"><a href="../reference/plotGEPs.html">plotGEPs</a></span><span class="op">(</span><span class="va">sce</span>, programs <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="../reference/getOptimalK.html">getOptimalK</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span>, n_genes <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
-<p><img src="consensus-nmf_files/figure-html/plot-geps-1.png" width="1152"></p>
 <p><strong>Interpretation</strong>: - Each column = one gene expression
 program - Each row = one gene (top contributors shown) - Red = high
 expression, Blue = low expression - Look for distinct, interpretable
@@ -387,10 +441,33 @@ gene sets</p>
 <div class="section level3">
 <h3 id="program-usage-visualization">Program Usage Visualization<a class="anchor" aria-label="anchor" href="#program-usage-visualization"></a>
 </h3>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Plot program usage on UMAP</span></span>
-<span><span class="fu"><a href="../reference/plotGEPUsage.html">plotGEPUsage</a></span><span class="op">(</span><span class="va">sce</span>, programs <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fu"><a href="../reference/getOptimalK.html">getOptimalK</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span><span class="op">)</span>, reduction <span class="op">=</span> <span class="st">"UMAP"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="consensus-nmf_files/figure-html/plot-usage-1.png" width="1152"></p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Plot program usage on UMAP alongside known cell types</span></span>
+<span><span class="va">opt_k</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getOptimalK.html">getOptimalK</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Create individual plots for better control</span></span>
+<span><span class="va">p1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/scater/man/plotReducedDim.html" class="external-link">plotReducedDim</a></span><span class="op">(</span><span class="va">sce</span>, dimred <span class="op">=</span> <span class="st">"UMAP"</span>, colour_by <span class="op">=</span> <span class="st">"level1class"</span>, point_size <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Known Brain Cell Types"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"right"</span>, legend.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_blank</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Show usage of first few programs</span></span>
+<span><span class="va">programs_to_show</span> <span class="op">&lt;-</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fl">3</span>, <span class="va">opt_k</span><span class="op">)</span></span>
+<span><span class="va">usage_plots</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="va">programs_to_show</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">col_name</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"cNMF_"</span>, <span class="va">i</span><span class="op">)</span></span>
+<span>  <span class="va">usage_plots</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/scater/man/plotReducedDim.html" class="external-link">plotReducedDim</a></span><span class="op">(</span><span class="va">sce</span>, dimred <span class="op">=</span> <span class="st">"UMAP"</span>, colour_by <span class="op">=</span> <span class="va">col_name</span>, point_size <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_color_viridis_c</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Usage"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"cNMF Program"</span>, <span class="va">i</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"right"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co"># Arrange plots</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">usage_plots</span><span class="op">)</span> <span class="op">&gt;=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="op">(</span><span class="va">p1</span> <span class="op">|</span> <span class="va">usage_plots</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> <span class="op">/</span> <span class="op">(</span><span class="va">usage_plots</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span> <span class="op">|</span> <span class="va">usage_plots</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span>  <span class="va">p1</span> <span class="op">|</span> <span class="va">usage_plots</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="op">}</span></span></code></pre></div>
 <p><strong>Interpretation</strong>: - Each panel shows usage of one
 program - Continuous colors = program activity levels - Spatial patterns
 often reveal biological structures - Look for cell type or
@@ -404,74 +481,22 @@ state-specific patterns</p>
 <h3 id="manual-k-selection">Manual k Selection<a class="anchor" aria-label="anchor" href="#manual-k-selection"></a>
 </h3>
 <p>Sometimes you may want to override automatic k selection:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get detailed information about all k values</span></span>
 <span><span class="va">cnmf_info</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getConsensusNMFInfo.html">getConsensusNMFInfo</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">cnmf_info</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $k_range</span></span>
-<span><span class="co">#&gt; [1] 4 5 6 7 8</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $n_runs</span></span>
-<span><span class="co">#&gt; [1] 20</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $optimal_k</span></span>
-<span><span class="co">#&gt; [1] 4</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $assay_used</span></span>
-<span><span class="co">#&gt; [1] "logcounts"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $subset_row</span></span>
-<span><span class="co">#&gt; NULL</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $parameters</span></span>
-<span><span class="co">#&gt; $parameters$tol</span></span>
-<span><span class="co">#&gt; [1] 1e-05</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $parameters$maxit</span></span>
-<span><span class="co">#&gt; [1] 100</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $parameters$L1</span></span>
-<span><span class="co">#&gt; [1] 0 0</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $parameters$n_cores</span></span>
-<span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $available_k_values</span></span>
-<span><span class="co">#&gt; [1] "4" "5" "6" "7" "8"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $stability_summary</span></span>
-<span><span class="co">#&gt;        k       stability           silhouette     reproducibility  </span></span>
-<span><span class="co">#&gt;  Min.   :4   Min.   :0.0004202   Min.   :0.2913   Min.   :0.06667  </span></span>
-<span><span class="co">#&gt;  1st Qu.:5   1st Qu.:0.0009250   1st Qu.:0.3627   1st Qu.:0.10000  </span></span>
-<span><span class="co">#&gt;  Median :6   Median :0.0059748   Median :0.4442   Median :0.21250  </span></span>
-<span><span class="co">#&gt;  Mean   :6   Mean   :0.0177953   Mean   :0.4412   Mean   :0.24333  </span></span>
-<span><span class="co">#&gt;  3rd Qu.:7   3rd Qu.:0.0307071   3rd Qu.:0.5022   3rd Qu.:0.40000  </span></span>
-<span><span class="co">#&gt;  Max.   :8   Max.   :0.0509494   Max.   :0.6057   Max.   :0.43750  </span></span>
-<span><span class="co">#&gt;  cophenetic_correlation</span></span>
-<span><span class="co">#&gt;  Min.   :1             </span></span>
-<span><span class="co">#&gt;  1st Qu.:1             </span></span>
-<span><span class="co">#&gt;  Median :1             </span></span>
-<span><span class="co">#&gt;  Mean   :1             </span></span>
-<span><span class="co">#&gt;  3rd Qu.:1             </span></span>
-<span><span class="co">#&gt;  Max.   :1             </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $call</span></span>
-<span><span class="co">#&gt; runConsensusNMF(x = sce, k_range = 4:8, n_runs = 20, verbose = TRUE, </span></span>
-<span><span class="co">#&gt;     n_cores = 1)</span></span>
 <span></span>
 <span><span class="co"># Force usage of specific k (e.g., k=6)</span></span>
 <span><span class="co"># This changes what getConsensusGEPs() returns by default</span></span>
 <span><span class="fu">metadata</span><span class="op">(</span><span class="va">sce</span><span class="op">)</span><span class="op">$</span><span class="va">cNMF</span><span class="op">$</span><span class="va">cNMF</span><span class="op">$</span><span class="va">optimal_k</span> <span class="op">&lt;-</span> <span class="fl">6</span></span>
 <span></span>
 <span><span class="co"># Verify change</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"New optimal k:"</span>, <span class="fu"><a href="../reference/getOptimalK.html">getOptimalK</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; New optimal k: 6</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"New optimal k:"</span>, <span class="fu"><a href="../reference/getOptimalK.html">getOptimalK</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="program-annotation">Program Annotation<a class="anchor" aria-label="anchor" href="#program-annotation"></a>
 </h3>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Get top genes for biological annotation</span></span>
 <span><span class="va">top_genes_detailed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getTopGEPFeatures.html">getTopGEPFeatures</a></span><span class="op">(</span><span class="va">sce</span>, n <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
 <span></span>
@@ -484,18 +509,12 @@ state-specific patterns</p>
 <span>                                  <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">top_10</span>, <span class="fl">3</span><span class="op">)</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span>, </span>
 <span>                                  <span class="st">"...)"</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">program_annotations</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "Program_1 (Gene_0830, Gene_0273, Gene_0328...)"</span></span>
-<span><span class="co">#&gt; [2] "Program_2 (Gene_0830, Gene_0341, Gene_0328...)"</span></span>
-<span><span class="co">#&gt; [3] "Program_3 (Gene_0830, Gene_0341, Gene_0273...)"</span></span>
-<span><span class="co">#&gt; [4] "Program_4 (Gene_0112, Gene_0273, Gene_0527...)"</span></span>
-<span><span class="co">#&gt; [5] "Program_5 (Gene_0830, Gene_0341, Gene_0136...)"</span></span>
-<span><span class="co">#&gt; [6] "Program_6 (Gene_0830, Gene_0341, Gene_0273...)"</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">program_annotations</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="robustness-assessment">Robustness Assessment<a class="anchor" aria-label="anchor" href="#robustness-assessment"></a>
 </h3>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Test robustness with different parameters</span></span>
 <span><span class="va">sce_alt1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/runConsensusNMF.html">runConsensusNMF</a></span><span class="op">(</span><span class="va">sce</span>, k_range <span class="op">=</span> <span class="fl">4</span><span class="op">:</span><span class="fl">8</span>, n_runs <span class="op">=</span> <span class="fl">50</span>, </span>
 <span>                           density_threshold <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span></span>
@@ -541,7 +560,7 @@ high-memory computing environments</p>
 <div class="section level3">
 <h3 id="optimization-tips">Optimization Tips<a class="anchor" aria-label="anchor" href="#optimization-tips"></a>
 </h3>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># For large datasets</span></span>
 <span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/runConsensusNMF.html">runConsensusNMF</a></span><span class="op">(</span><span class="va">sce</span>,</span>
 <span>                       k_range <span class="op">=</span> <span class="fl">8</span><span class="op">:</span><span class="fl">12</span>,          <span class="co"># Focused range</span></span>
@@ -562,27 +581,36 @@ high-memory computing environments</p>
 <div class="section level3">
 <h3 id="cell-type-assignment">Cell Type Assignment<a class="anchor" aria-label="anchor" href="#cell-type-assignment"></a>
 </h3>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Assign cells to dominant programs</span></span>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Assign cells to dominant programs and compare with known brain cell types</span></span>
 <span><span class="va">usage_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getGEPUsage.html">getGEPUsage</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
 <span><span class="va">dominant_programs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">usage_matrix</span>, <span class="fl">1</span>, <span class="va">which.max</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Add to cell metadata</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">colData</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span><span class="op">$</span><span class="va">dominant_program</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Program_"</span>, <span class="va">dominant_programs</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Compare with original cell types (if available)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">colData</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span><span class="op">$</span><span class="va">dominant_program</span>, <span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">colData</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span><span class="op">$</span><span class="va">cell_type</span><span class="op">)</span></span>
-<span><span class="co">#&gt;            </span></span>
-<span><span class="co">#&gt;             Type1 Type2 Type3 Type4 Type5</span></span>
-<span><span class="co">#&gt;   Program_1    38    34    38    38    37</span></span>
-<span><span class="co">#&gt;   Program_2    49    47    52    51    59</span></span>
-<span><span class="co">#&gt;   Program_3    42    47    56    49    52</span></span>
-<span><span class="co">#&gt;   Program_4    27    24    19    23    18</span></span></code></pre></div>
+<span><span class="co"># Compare cNMF programs with known brain cell types</span></span>
+<span><span class="va">program_celltype_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/table.html" class="external-link">table</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">colData</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span><span class="op">$</span><span class="va">dominant_program</span>, <span class="va">sce</span><span class="op">$</span><span class="va">level1class</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"cNMF Programs vs Known Brain Cell Types:"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">program_celltype_table</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Calculate enrichment of cell types in each program</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nCell type enrichment in programs:\n"</span><span class="op">)</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fu"><a href="../reference/getOptimalK.html">getOptimalK</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">program_cells</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">colData</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span><span class="op">$</span><span class="va">dominant_program</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Program_"</span>, <span class="va">i</span><span class="op">)</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">program_cells</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">10</span><span class="op">)</span> <span class="op">{</span>  <span class="co"># Only for programs with enough cells</span></span>
+<span>    <span class="va">celltype_freq</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">sce</span><span class="op">$</span><span class="va">level1class</span><span class="op">[</span><span class="va">program_cells</span><span class="op">]</span><span class="op">)</span></span>
+<span>    <span class="va">top_celltype</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">celltype_freq</span>, decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
+<span>    <span class="va">enrichment</span> <span class="op">&lt;-</span> <span class="va">celltype_freq</span><span class="op">[</span><span class="va">top_celltype</span><span class="op">]</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">program_cells</span><span class="op">)</span> <span class="op">*</span> <span class="fl">100</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Program %d: enriched for %s (%.1f%% of cells)\n"</span>, </span>
+<span>                <span class="va">i</span>, <span class="va">top_celltype</span>, <span class="va">enrichment</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span><span class="op">}</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="differential-program-usage">Differential Program Usage<a class="anchor" aria-label="anchor" href="#differential-program-usage"></a>
 </h3>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Test for differential program usage between conditions</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/MarioniLab/scran/" class="external-link">scran</a></span><span class="op">)</span></span>
 <span></span>
@@ -597,7 +625,7 @@ high-memory computing environments</p>
 <div class="section level3">
 <h3 id="gene-set-enrichment">Gene Set Enrichment<a class="anchor" aria-label="anchor" href="#gene-set-enrichment"></a>
 </h3>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Example pathway enrichment (requires additional packages)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">clusterProfiler</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">org.Hs.eg.db</span><span class="op">)</span></span>
@@ -672,7 +700,11 @@ expectations</li>
 <div class="section level2">
 <h2 id="comparison-with-standard-nmf">Comparison with Standard NMF<a class="anchor" aria-label="anchor" href="#comparison-with-standard-nmf"></a>
 </h2>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<p>This section demonstrates the improved stability of consensus NMF
+compared to standard NMF on the brain dataset. The consensus approach
+provides much more reliable and interpretable gene expression
+programs.</p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Run standard NMF with same k</span></span>
 <span><span class="va">opt_k</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getOptimalK.html">getOptimalK</a></span><span class="op">(</span><span class="va">sce</span><span class="op">)</span></span>
 <span><span class="va">sce</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/runNMF.html">runNMF</a></span><span class="op">(</span><span class="va">sce</span>, k <span class="op">=</span> <span class="va">opt_k</span>, name <span class="op">=</span> <span class="st">"StandardNMF"</span><span class="op">)</span></span>
@@ -696,7 +728,7 @@ expectations</li>
 <div class="section level2">
 <h2 id="session-information">Session Information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.4.3 Patched (2025-02-28 r87922)</span></span>
 <span><span class="co">#&gt; Platform: aarch64-apple-darwin20</span></span>
@@ -717,46 +749,62 @@ expectations</li>
 <span><span class="co">#&gt; [8] base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt;  [1] scran_1.34.0                pheatmap_1.0.12            </span></span>
-<span><span class="co">#&gt;  [3] scater_1.34.1               ggplot2_3.5.1              </span></span>
-<span><span class="co">#&gt;  [5] scuttle_1.16.0              BiocNMF_0.99.0             </span></span>
-<span><span class="co">#&gt;  [7] SingleCellExperiment_1.28.1 SummarizedExperiment_1.36.0</span></span>
-<span><span class="co">#&gt;  [9] Biobase_2.66.0              GenomicRanges_1.58.0       </span></span>
-<span><span class="co">#&gt; [11] GenomeInfoDb_1.42.3         IRanges_2.40.1             </span></span>
-<span><span class="co">#&gt; [13] S4Vectors_0.44.0            MatrixGenerics_1.18.1      </span></span>
-<span><span class="co">#&gt; [15] matrixStats_1.5.0           BiocGenerics_0.52.0        </span></span>
-<span><span class="co">#&gt; [17] BiocStyle_2.34.0           </span></span>
+<span><span class="co">#&gt;  [1] patchwork_1.3.0             scRNAseq_2.20.0            </span></span>
+<span><span class="co">#&gt;  [3] pheatmap_1.0.12             scran_1.34.0               </span></span>
+<span><span class="co">#&gt;  [5] scater_1.34.1               ggplot2_3.5.1              </span></span>
+<span><span class="co">#&gt;  [7] scuttle_1.16.0              BiocNMF_0.99.0             </span></span>
+<span><span class="co">#&gt;  [9] SingleCellExperiment_1.28.1 SummarizedExperiment_1.36.0</span></span>
+<span><span class="co">#&gt; [11] Biobase_2.66.0              GenomicRanges_1.58.0       </span></span>
+<span><span class="co">#&gt; [13] GenomeInfoDb_1.42.3         IRanges_2.40.1             </span></span>
+<span><span class="co">#&gt; [15] S4Vectors_0.44.0            MatrixGenerics_1.18.1      </span></span>
+<span><span class="co">#&gt; [17] matrixStats_1.5.0           BiocGenerics_0.52.0        </span></span>
+<span><span class="co">#&gt; [19] BiocStyle_2.34.0           </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;  [1] gridExtra_2.3           rlang_1.1.5             magrittr_2.0.3         </span></span>
-<span><span class="co">#&gt;  [4] compiler_4.4.3          systemfonts_1.2.1       vctrs_0.6.5            </span></span>
-<span><span class="co">#&gt;  [7] pkgconfig_2.0.3         crayon_1.5.3            fastmap_1.2.0          </span></span>
-<span><span class="co">#&gt; [10] XVector_0.46.0          labeling_0.4.3          rmarkdown_2.29         </span></span>
-<span><span class="co">#&gt; [13] UCSC.utils_1.2.0        ggbeeswarm_0.7.2        ragg_1.5.0             </span></span>
-<span><span class="co">#&gt; [16] xfun_0.51               bluster_1.16.0          zlibbioc_1.52.0        </span></span>
-<span><span class="co">#&gt; [19] cachem_1.1.0            beachmat_2.22.0         jsonlite_1.9.1         </span></span>
-<span><span class="co">#&gt; [22] DelayedArray_0.32.0     BiocParallel_1.40.0     irlba_2.3.5.1          </span></span>
-<span><span class="co">#&gt; [25] parallel_4.4.3          cluster_2.1.8.1         R6_2.6.1               </span></span>
-<span><span class="co">#&gt; [28] bslib_0.9.0             RColorBrewer_1.1-3      limma_3.62.2           </span></span>
-<span><span class="co">#&gt; [31] jquerylib_0.1.4         Rcpp_1.0.14             bookdown_0.42          </span></span>
-<span><span class="co">#&gt; [34] knitr_1.49              FNN_1.1.4.1             Matrix_1.7-3           </span></span>
-<span><span class="co">#&gt; [37] igraph_2.1.4            tidyselect_1.2.1        abind_1.4-8            </span></span>
-<span><span class="co">#&gt; [40] yaml_2.3.10             viridis_0.6.5           codetools_0.2-20       </span></span>
-<span><span class="co">#&gt; [43] lattice_0.22-6          tibble_3.2.1            withr_3.0.2            </span></span>
-<span><span class="co">#&gt; [46] evaluate_1.0.3          desc_1.4.3              pillar_1.10.1          </span></span>
-<span><span class="co">#&gt; [49] BiocManager_1.30.25     generics_0.1.3          munsell_0.5.1          </span></span>
-<span><span class="co">#&gt; [52] scales_1.3.0            glue_1.8.0              metapod_1.14.0         </span></span>
-<span><span class="co">#&gt; [55] tools_4.4.3             BiocNeighbors_2.0.1     ScaledMatrix_1.14.0    </span></span>
-<span><span class="co">#&gt; [58] locfit_1.5-9.12         RcppML_0.3.7            fs_1.6.5               </span></span>
-<span><span class="co">#&gt; [61] grid_4.4.3              edgeR_4.4.2             colorspace_2.1-1       </span></span>
-<span><span class="co">#&gt; [64] GenomeInfoDbData_1.2.13 beeswarm_0.4.0          BiocSingular_1.22.0    </span></span>
-<span><span class="co">#&gt; [67] vipor_0.4.7             cli_3.6.4               rsvd_1.0.5             </span></span>
-<span><span class="co">#&gt; [70] textshaping_1.0.0       S4Arrays_1.6.0          viridisLite_0.4.2      </span></span>
-<span><span class="co">#&gt; [73] dplyr_1.1.4             uwot_0.2.3              gtable_0.3.6           </span></span>
-<span><span class="co">#&gt; [76] sass_0.4.9              digest_0.6.37           SparseArray_1.6.2      </span></span>
-<span><span class="co">#&gt; [79] ggrepel_0.9.6           dqrng_0.4.1             htmlwidgets_1.6.4      </span></span>
-<span><span class="co">#&gt; [82] farver_2.1.2            htmltools_0.5.8.1       pkgdown_2.1.3          </span></span>
-<span><span class="co">#&gt; [85] lifecycle_1.0.4         httr_1.4.7              statmod_1.5.0</span></span></code></pre></div>
+<span><span class="co">#&gt;   [1] RColorBrewer_1.1-3       jsonlite_1.9.1           magrittr_2.0.3          </span></span>
+<span><span class="co">#&gt;   [4] gypsum_1.2.0             ggbeeswarm_0.7.2         GenomicFeatures_1.58.0  </span></span>
+<span><span class="co">#&gt;   [7] farver_2.1.2             rmarkdown_2.29           fs_1.6.5                </span></span>
+<span><span class="co">#&gt;  [10] BiocIO_1.16.0            zlibbioc_1.52.0          ragg_1.5.0              </span></span>
+<span><span class="co">#&gt;  [13] vctrs_0.6.5              memoise_2.0.1            Rsamtools_2.22.0        </span></span>
+<span><span class="co">#&gt;  [16] RCurl_1.98-1.17          htmltools_0.5.8.1        S4Arrays_1.6.0          </span></span>
+<span><span class="co">#&gt;  [19] AnnotationHub_3.14.0     curl_6.2.1               BiocNeighbors_2.0.1     </span></span>
+<span><span class="co">#&gt;  [22] Rhdf5lib_1.28.0          rhdf5_2.50.2             SparseArray_1.6.2       </span></span>
+<span><span class="co">#&gt;  [25] sass_0.4.9               alabaster.base_1.6.1     bslib_0.9.0             </span></span>
+<span><span class="co">#&gt;  [28] alabaster.sce_1.6.0      htmlwidgets_1.6.4        desc_1.4.3              </span></span>
+<span><span class="co">#&gt;  [31] httr2_1.1.1              cachem_1.1.0             GenomicAlignments_1.42.0</span></span>
+<span><span class="co">#&gt;  [34] igraph_2.1.4             lifecycle_1.0.4          pkgconfig_2.0.3         </span></span>
+<span><span class="co">#&gt;  [37] rsvd_1.0.5               Matrix_1.7-3             R6_2.6.1                </span></span>
+<span><span class="co">#&gt;  [40] fastmap_1.2.0            GenomeInfoDbData_1.2.13  digest_0.6.37           </span></span>
+<span><span class="co">#&gt;  [43] colorspace_2.1-1         AnnotationDbi_1.68.0     dqrng_0.4.1             </span></span>
+<span><span class="co">#&gt;  [46] irlba_2.3.5.1            ExperimentHub_2.14.0     textshaping_1.0.0       </span></span>
+<span><span class="co">#&gt;  [49] RSQLite_2.3.9            beachmat_2.22.0          filelock_1.0.3          </span></span>
+<span><span class="co">#&gt;  [52] httr_1.4.7               abind_1.4-8              compiler_4.4.3          </span></span>
+<span><span class="co">#&gt;  [55] bit64_4.6.0-1            withr_3.0.2              BiocParallel_1.40.0     </span></span>
+<span><span class="co">#&gt;  [58] viridis_0.6.5            DBI_1.2.3                alabaster.ranges_1.6.0  </span></span>
+<span><span class="co">#&gt;  [61] HDF5Array_1.34.0         alabaster.schemas_1.6.0  rappdirs_0.3.3          </span></span>
+<span><span class="co">#&gt;  [64] DelayedArray_0.32.0      rjson_0.2.23             bluster_1.16.0          </span></span>
+<span><span class="co">#&gt;  [67] tools_4.4.3              vipor_0.4.7              beeswarm_0.4.0          </span></span>
+<span><span class="co">#&gt;  [70] glue_1.8.0               restfulr_0.0.15          rhdf5filters_1.18.1     </span></span>
+<span><span class="co">#&gt;  [73] grid_4.4.3               cluster_2.1.8.1          generics_0.1.3          </span></span>
+<span><span class="co">#&gt;  [76] gtable_0.3.6             ensembldb_2.30.0         RcppML_0.3.7            </span></span>
+<span><span class="co">#&gt;  [79] BiocSingular_1.22.0      ScaledMatrix_1.14.0      metapod_1.14.0          </span></span>
+<span><span class="co">#&gt;  [82] XVector_0.46.0           ggrepel_0.9.6            BiocVersion_3.20.0      </span></span>
+<span><span class="co">#&gt;  [85] pillar_1.10.1            limma_3.62.2             dplyr_1.1.4             </span></span>
+<span><span class="co">#&gt;  [88] BiocFileCache_2.14.0     lattice_0.22-6           FNN_1.1.4.1             </span></span>
+<span><span class="co">#&gt;  [91] rtracklayer_1.66.0       bit_4.6.0                tidyselect_1.2.1        </span></span>
+<span><span class="co">#&gt;  [94] locfit_1.5-9.12          Biostrings_2.74.1        knitr_1.49              </span></span>
+<span><span class="co">#&gt;  [97] gridExtra_2.3            bookdown_0.42            ProtGenerics_1.38.0     </span></span>
+<span><span class="co">#&gt; [100] edgeR_4.4.2              xfun_0.51                statmod_1.5.0           </span></span>
+<span><span class="co">#&gt; [103] UCSC.utils_1.2.0         lazyeval_0.2.2           yaml_2.3.10             </span></span>
+<span><span class="co">#&gt; [106] evaluate_1.0.3           codetools_0.2-20         tibble_3.2.1            </span></span>
+<span><span class="co">#&gt; [109] alabaster.matrix_1.6.1   BiocManager_1.30.25      cli_3.6.4               </span></span>
+<span><span class="co">#&gt; [112] uwot_0.2.3               systemfonts_1.2.1        munsell_0.5.1           </span></span>
+<span><span class="co">#&gt; [115] jquerylib_0.1.4          Rcpp_1.1.0               dbplyr_2.5.0            </span></span>
+<span><span class="co">#&gt; [118] png_0.1-8                XML_3.99-0.18            parallel_4.4.3          </span></span>
+<span><span class="co">#&gt; [121] pkgdown_2.1.3            blob_1.2.4               AnnotationFilter_1.30.0 </span></span>
+<span><span class="co">#&gt; [124] bitops_1.0-9             alabaster.se_1.6.0       viridisLite_0.4.2       </span></span>
+<span><span class="co">#&gt; [127] scales_1.3.0             crayon_1.5.3             rlang_1.1.5             </span></span>
+<span><span class="co">#&gt; [130] KEGGREST_1.46.0</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

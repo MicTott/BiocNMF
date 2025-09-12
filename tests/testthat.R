@@ -1,4 +1,4 @@
 library(testthat)
-library(BiocNMF)
+library(NMFscape)
 
-test_check("BiocNMF")
+test_check("NMFscape")

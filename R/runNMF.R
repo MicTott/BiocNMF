@@ -1,4 +1,4 @@
-#' Run BiocNMF Non-negative Matrix Factorization on SingleCellExperiment objects
+#' Run NMFscape Non-negative Matrix Factorization on SingleCellExperiment objects
 #'
 #' Performs NMF using RcppML on SingleCellExperiment or SpatialExperiment objects
 #' and stores results in reducedDims slot with metadata
@@ -23,7 +23,7 @@
 #' library(scuttle)
 #' sce <- mockSCE()
 #' sce <- logNormCounts(sce)
-#' sce <- runBiocNMF(sce, k = 10)
+#' sce <- runNMFscape(sce, k = 10)
 #' 
 #' # Access NMF coefficients (cell loadings)
 #' nmf_coords <- reducedDim(sce, "NMF")
@@ -36,7 +36,7 @@
 #' @importFrom SingleCellExperiment reducedDim<-
 #' @importFrom S4Vectors metadata<-
 #' @importFrom Matrix Matrix
-runBiocNMF <- function(x, k, assay = "logcounts", name = "NMF", 
+runNMFscape <- function(x, k, assay = "logcounts", name = "NMF", 
                    subset_row = NULL, tol = 1e-5, maxit = 100,
                    L1 = c(0, 0), seed = NULL, verbose = TRUE, ...) {
     

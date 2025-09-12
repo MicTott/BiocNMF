@@ -16,7 +16,7 @@
 #' @export
 #' @examples
 #' # Run NMF and find differentially expressed programs
-#' sce <- runBiocNMF(sce, k = 8)
+#' sce <- runNMFscape(sce, k = 8)
 #' deps <- FindAllDEPs(sce, "cell_type")
 #' 
 #' # View results for first cell type
@@ -34,7 +34,7 @@ FindAllDEPs <- function(x, cell_type_col, nmf_name = "NMF",
     }
     
     if (!nmf_name %in% reducedDimNames(x)) {
-        stop("NMF result '", nmf_name, "' not found. Run runBiocNMF() first.")
+        stop("NMF result '", nmf_name, "' not found. Run runNMFscape() first.")
     }
     
     if (!cell_type_col %in% colnames(colData(x))) {

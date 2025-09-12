@@ -1,10 +1,10 @@
-# BiocNMF
+# NMFscape
 
 Fast Non-negative Matrix Factorization for Single Cell and Spatial Data using RcppML
 
 ## Overview
 
-BiocNMF provides high-performance non-negative matrix factorization (NMF) methods for SingleCellExperiment and SpatialExperiment objects. The package features:
+NMFscape provides high-performance non-negative matrix factorization (NMF) methods for SingleCellExperiment and SpatialExperiment objects. The package features:
 
 - **Fast NMF**: Uses the RcppML backend for high-performance matrix factorization
 - **Consensus NMF**: Implements true consensus clustering methodology from Kotliar et al. (eLife 2019)
@@ -41,16 +41,16 @@ BiocNMF provides high-performance non-negative matrix factorization (NMF) method
 # Install from GitHub
 if (!requireNamespace("devtools", quietly = TRUE))
     install.packages("devtools")
-devtools::install_github("MicTott/BiocNMF")
+devtools::install_github("MicTott/NMFscape")
 
 # Load package
-library(BiocNMF)
+library(NMFscape)
 ```
 
 ## Quick Start
 
 ```r
-library(BiocNMF)
+library(NMFscape)
 library(scuttle)
 
 # Create example data
@@ -79,7 +79,7 @@ plotGEPs(sce, programs = 1:5)           # Program heatmap
 
 ### Consensus NMF Algorithm
 
-BiocNMF implements the consensus clustering approach from [Kotliar et al. (2019)](https://elifesciences.org/articles/43803):
+NMFscape implements the consensus clustering approach from [Kotliar et al. (2019)](https://elifesciences.org/articles/43803):
 
 1. **Multiple NMF runs**: Generate many gene expression programs
 2. **Density filtering**: Remove outlier programs using local density
@@ -98,7 +98,7 @@ This approach provides much more robust and stable gene expression programs comp
 
 ## Citation
 
-If you use BiocNMF in your research, please cite:
+If you use NMFscape in your research, please cite:
 
 - The original consensus NMF paper: Kotliar et al. (2019) "Identifying gene expression programs of cell-type identity and cellular activity with single-cell RNA-Seq" eLife
 - RcppML: DeBruine et al. (2021) "High-performance non-negative matrix factorization for large single cell data"
@@ -109,4 +109,4 @@ This package is licensed under the Artistic-2.0 license.
 
 ## Issues
 
-Please report issues on [GitHub Issues](https://github.com/MicTott/BiocNMF/issues).
+Please report issues on [GitHub Issues](https://github.com/MicTott/NMFscape/issues).

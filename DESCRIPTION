@@ -1,4 +1,4 @@
-Package: BiocNMF
+Package: NMFscape
 Type: Package
 Title: Fast Non-negative Matrix Factorization for Single Cell and Spatial Data
 Version: 0.99.0
@@ -48,7 +48,7 @@ Suggests:
 VignetteBuilder: knitr
 biocViews: DimensionReduction, FeatureExtraction, Clustering, 
     RNASeq, SingleCell, Transcriptomics, Spatial, Software
-BugReports: https://github.com/MicTott/BiocNMF/issues
-URL: https://github.com/MicTott/BiocNMF, https://mictott.github.io/BiocNMF/
+BugReports: https://github.com/MicTott/NMFscape/issues
+URL: https://github.com/MicTott/NMFscape, https://mictott.github.io/NMFscape/
 SystemRequirements: C++14
 RoxygenNote: 7.3.2

@@ -15,7 +15,7 @@ importFrom(scran, findMarkers)
 importFrom(pheatmap, pheatmap)
 importFrom(AnnotationDbi, mapIds)
 
-export(runBiocNMF)
+export(runNMFscape)
 export(getBasis)
 export(getCoefficients)
 export(getTopFeatures)

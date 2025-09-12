@@ -1,5 +1,5 @@
 ---
-title: "Consensus NMF with BiocNMF"
+title: "Consensus NMF with NMFscape"
 author: "Michael Totty"
 date: "`r Sys.Date()`"
 output: 
@@ -8,7 +8,7 @@ output:
     toc_float: true
     number_sections: true
 vignette: >
-  %\VignetteIndexEntry{Consensus NMF with BiocNMF}
+  %\VignetteIndexEntry{Consensus NMF with NMFscape}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -46,7 +46,7 @@ cNMF, developed by Kotliar et al. (eLife 2019), solves this through:
 4. **Robust final programs** through clustering and refitting
 
 ```{r load-packages}
-library(BiocNMF)
+library(NMFscape)
 library(SingleCellExperiment)
 library(scuttle)
 library(scater)
@@ -99,7 +99,7 @@ Build consensus matrix showing co-clustering frequencies:
 
 ## Implementation Details
 
-BiocNMF implements the exact algorithm from Kotliar et al. with these key components:
+NMFscape implements the exact algorithm from Kotliar et al. with these key components:
 
 ```{r algorithm-demo, eval=FALSE}
 # Conceptual overview (actual implementation is in C++/optimized R)
@@ -584,12 +584,12 @@ This section demonstrates the improved stability of consensus NMF compared to st
 ```{r comparison, eval=FALSE}
 # Run standard NMF with same k
 opt_k <- getOptimalK(sce)
-sce <- runBiocNMF(sce, k = opt_k, name = "StandardNMF")
+sce <- runNMFscape(sce, k = opt_k, name = "StandardNMF")
 
 # Compare stability by running multiple times
 set.seed(123)
 nmf_runs <- replicate(10, {
-  sce_temp <- runBiocNMF(sce, k = opt_k, verbose = FALSE)
+  sce_temp <- runNMFscape(sce, k = opt_k, verbose = FALSE)
   getBasis(sce_temp)[, 1]  # First program
 }, simplify = FALSE)
 

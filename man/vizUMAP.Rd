@@ -41,7 +41,7 @@ This is a wrapper around vizDimRed() specifically for UMAP plotting.
 library(scuttle)
 sce <- mockSCE()
 sce <- logNormCounts(sce)
-sce <- runBiocNMF(sce, k = 5)
+sce <- runNMFscape(sce, k = 5)
 sce <- runUMAP(sce)
 
 # Plot NMF program 1 on UMAP

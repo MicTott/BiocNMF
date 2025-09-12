@@ -1,6 +1,6 @@
 ---
-title: "Gene Set Enrichment Analysis with BiocNMF"
-author: "BiocNMF Development Team"
+title: "Gene Set Enrichment Analysis with NMFscape"
+author: "NMFscape Development Team"
 date: "`r Sys.Date()`"
 output: 
   BiocStyle::html_document:
@@ -9,7 +9,7 @@ output:
     fig_width: 10
     fig_height: 8
 vignette: >
-  %\VignetteIndexEntry{Gene Set Enrichment Analysis with BiocNMF}
+  %\VignetteIndexEntry{Gene Set Enrichment Analysis with NMFscape}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -26,7 +26,7 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-Gene set enrichment analysis is a powerful approach to interpret the biological meaning of gene expression programs identified by Non-negative Matrix Factorization (NMF). This vignette demonstrates how to perform and visualize Gene Ontology (GO) enrichment analysis using BiocNMF's integrated workflow.
+Gene set enrichment analysis is a powerful approach to interpret the biological meaning of gene expression programs identified by Non-negative Matrix Factorization (NMF). This vignette demonstrates how to perform and visualize Gene Ontology (GO) enrichment analysis using NMFscape's integrated workflow.
 
 We'll use the Zeisel brain dataset, which contains diverse brain cell types with distinct molecular signatures - perfect for demonstrating how NMF programs capture biologically meaningful gene expression patterns.
 
@@ -41,7 +41,7 @@ We'll use the Zeisel brain dataset, which contains diverse brain cell types with
 # Setup and Data Preparation
 
 ```{r libraries}
-library(BiocNMF)
+library(NMFscape)
 library(scRNAseq)
 library(scuttle)
 library(scater)
@@ -100,7 +100,7 @@ cat("Processed dataset:", nrow(sce), "genes,", ncol(sce), "cells\n")
 
 ```{r nmf}
 # Run NMF to identify gene expression programs
-sce <- runBiocNMF(sce, k = 8, verbose = FALSE)
+sce <- runNMFscape(sce, k = 8, verbose = FALSE)
 
 # Add UMAP for visualization
 sce <- runPCA(sce, ncomponents = 50)
@@ -176,7 +176,7 @@ for (i in 1:min(4, length(go_results))) {
 
 # Visualization of GO Enrichment
 
-BiocNMF provides several visualization functions to explore GO enrichment results.
+NMFscape provides several visualization functions to explore GO enrichment results.
 
 ## Bar Charts
 

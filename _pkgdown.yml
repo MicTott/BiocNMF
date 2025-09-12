@@ -1,9 +1,9 @@
-url: https://mictott.github.io/BiocNMF/
+url: https://mictott.github.io/NMFscape/
 template:
   bootstrap: 5
   
 home:
-  title: "BiocNMF: Fast Non-negative Matrix Factorization for Single Cell and Spatial Data"
+  title: "NMFscape: Fast Non-negative Matrix Factorization for Single Cell and Spatial Data"
   description: >
     High-performance non-negative matrix factorization (NMF) methods for 
     SingleCellExperiment and SpatialExperiment objects using the RcppML backend.
@@ -33,14 +33,14 @@ navbar:
       href: news/index.html
     github:
       icon: fab fa-github fa-lg
-      href: https://github.com/MicTott/BiocNMF
+      href: https://github.com/MicTott/NMFscape
       aria-label: GitHub
 
 reference:
 - title: Main Functions
   desc: Core NMF and consensus NMF functions
   contents:
-  - runBiocNMF
+  - runNMFscape
   - runConsensusNMF
 
 - title: Standard NMF Accessors

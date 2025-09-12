@@ -1,5 +1,5 @@
 ---
-title: "Getting Started with BiocNMF"
+title: "Getting Started with NMFscape"
 author: "Michael Totty"
 date: "`r Sys.Date()`"
 output: 
@@ -8,7 +8,7 @@ output:
     toc_float: true
     number_sections: true
 vignette: >
-  %\VignetteIndexEntry{Getting Started with BiocNMF}
+  %\VignetteIndexEntry{Getting Started with NMFscape}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -24,7 +24,7 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-BiocNMF provides fast, scalable non-negative matrix factorization (NMF) for single-cell and spatial genomics data. NMF decomposes gene expression data into biologically interpretable gene expression programs and their usage patterns across cells.
+NMFscape provides fast, scalable non-negative matrix factorization (NMF) for single-cell and spatial genomics data. NMF decomposes gene expression data into biologically interpretable gene expression programs and their usage patterns across cells.
 
 ## Why NMF?
 
@@ -33,10 +33,10 @@ BiocNMF provides fast, scalable non-negative matrix factorization (NMF) for sing
 - **Cell type discovery**: Programs often correspond to cell type signatures
 - **Additive mixing**: Cells can express multiple programs simultaneously
 
-BiocNMF uses RcppML for high-performance computation and integrates seamlessly with Bioconductor workflows.
+NMFscape uses RcppML for high-performance computation and integrates seamlessly with Bioconductor workflows.
 
 ```{r load-packages}
-library(BiocNMF)
+library(NMFscape)
 library(SingleCellExperiment)
 library(scuttle)
 library(scater)
@@ -83,7 +83,7 @@ cat("Final data:", nrow(sce), "genes,", ncol(sce), "cells\n")
 
 ```{r run-nmf}
 # Run NMF with 8 programs (good for brain cell diversity)
-sce <- runBiocNMF(sce, k = 8, verbose = FALSE)
+sce <- runNMFscape(sce, k = 8, verbose = FALSE)
 
 # Check results
 cat("NMF programs stored in:", reducedDimNames(sce), "\n")
@@ -104,7 +104,7 @@ cat("Available dimension reductions:", reducedDimNames(sce), "\n")
 
 ## Plot NMF programs on UMAP
 
-BiocNMF provides convenient visualization functions to plot NMF program usage on dimension reduction coordinates.
+NMFscape provides convenient visualization functions to plot NMF program usage on dimension reduction coordinates.
 
 ```{r visualize-programs, fig.width=12, fig.height=6}
 # Visualize two distinct NMF programs
@@ -140,7 +140,7 @@ for (i in 1:4) {
 
 # Key Functions
 
-- **`runBiocNMF()`**: Run NMF decomposition
+- **`runNMFscape()`**: Run NMF decomposition
 - **`getBasis()`**: Extract gene expression programs (genes × programs)
 - **`getCoefficients()`**: Extract program usage (cells × programs)  
 - **`getTopFeatures()`**: Get top genes per program
